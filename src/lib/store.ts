@@ -41,6 +41,36 @@ export async function getFob(name: string): Promise<Fob | undefined> {
     return fobs.find((f) => f.name === name);
 }
 
+export async function renameFob(oldName: string, newName: string): Promise<"ok" | "not-found" | "name-taken"> {
+    const fobs = await loadFobs();
+    const index = fobs.findIndex((f) => f.name === oldName);
+    if (index < 0) return "not-found";
+    if (fobs.some((f) => f.name === newName)) return "name-taken";
+    fobs[index].name = newName;
+    await mkdir(STORE_DIR, { recursive: true });
+    await writeFile(STORE_PATH, `${JSON.stringify(fobs, null, 2)}\n`);
+    return "ok";
+}
+
+export async function importFobs(incoming: Fob[]): Promise<{ added: number; updated: number }> {
+    const fobs = await loadFobs();
+    let added = 0;
+    let updated = 0;
+    for (const fob of incoming) {
+        const existing = fobs.findIndex((f) => f.name === fob.name);
+        if (existing >= 0) {
+            fobs[existing] = fob;
+            updated++;
+        } else {
+            fobs.push(fob);
+            added++;
+        }
+    }
+    await mkdir(STORE_DIR, { recursive: true });
+    await writeFile(STORE_PATH, `${JSON.stringify(fobs, null, 2)}\n`);
+    return { added, updated };
+}
+
 export async function removeFob(name: string): Promise<boolean> {
     const fobs = await loadFobs();
     const index = fobs.findIndex((f) => f.name === name);

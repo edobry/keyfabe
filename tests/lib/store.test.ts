@@ -102,6 +102,77 @@ describe("getFob", () => {
     });
 });
 
+describe("renameFob", () => {
+    it("renames existing fob", async () => {
+        const { saveFob, renameFob, getFob } = await importStore();
+        await saveFob({ name: "old-name", type: "EM410x", id: "AABBCCDDEE", savedAt: "2024-01-01" });
+
+        const result = await renameFob("old-name", "new-name");
+        expect(result).toBe("ok");
+
+        const fob = await getFob("new-name");
+        expect(fob).toBeDefined();
+        expect(fob!.id).toBe("AABBCCDDEE");
+
+        const oldFob = await getFob("old-name");
+        expect(oldFob).toBeUndefined();
+    });
+
+    it("returns not-found for unknown name", async () => {
+        const { renameFob } = await importStore();
+        const result = await renameFob("nonexistent", "new-name");
+        expect(result).toBe("not-found");
+    });
+
+    it("returns name-taken when new name exists", async () => {
+        const { saveFob, renameFob } = await importStore();
+        await saveFob({ name: "a", type: "EM410x", id: "1111111111", savedAt: "2024-01-01" });
+        await saveFob({ name: "b", type: "EM410x", id: "2222222222", savedAt: "2024-01-02" });
+
+        const result = await renameFob("a", "b");
+        expect(result).toBe("name-taken");
+    });
+});
+
+describe("importFobs", () => {
+    it("adds new fobs", async () => {
+        const { importFobs, loadFobs } = await importStore();
+        const result = await importFobs([
+            { name: "a", type: "EM410x", id: "1111111111", savedAt: "2024-01-01" },
+            { name: "b", type: "HID Prox", id: "2222222222", savedAt: "2024-01-02" },
+        ]);
+
+        expect(result).toEqual({ added: 2, updated: 0 });
+        const fobs = await loadFobs();
+        expect(fobs).toHaveLength(2);
+    });
+
+    it("updates existing fobs by name", async () => {
+        const { saveFob, importFobs, getFob } = await importStore();
+        await saveFob({ name: "a", type: "EM410x", id: "OLD_ID", savedAt: "2024-01-01" });
+
+        const result = await importFobs([{ name: "a", type: "EM410x", id: "NEW_ID", savedAt: "2024-01-02" }]);
+
+        expect(result).toEqual({ added: 0, updated: 1 });
+        const fob = await getFob("a");
+        expect(fob!.id).toBe("NEW_ID");
+    });
+
+    it("mixes adds and updates", async () => {
+        const { saveFob, importFobs, loadFobs } = await importStore();
+        await saveFob({ name: "existing", type: "EM410x", id: "OLD", savedAt: "2024-01-01" });
+
+        const result = await importFobs([
+            { name: "existing", type: "EM410x", id: "UPDATED", savedAt: "2024-01-02" },
+            { name: "new-one", type: "HID Prox", id: "FRESH", savedAt: "2024-01-03" },
+        ]);
+
+        expect(result).toEqual({ added: 1, updated: 1 });
+        const fobs = await loadFobs();
+        expect(fobs).toHaveLength(2);
+    });
+});
+
 describe("removeFob", () => {
     it("removes existing fob and returns true", async () => {
         const { saveFob, removeFob, loadFobs } = await importStore();
