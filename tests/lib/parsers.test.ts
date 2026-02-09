@@ -30,6 +30,13 @@ firmware version: v4.18484 - Iceman
         expect(result.connected).toBe(false);
     });
 
+    it("parses FPGA mode line as firmware", () => {
+        const output = `[#]   mode.................... fpga_pm3_hf.ncd image 2s30vq100 11-09-2025 14:31:08`;
+        const result = parseHwStatus(output);
+        expect(result.connected).toBe(true);
+        expect(result.firmwareVersion).toBe("fpga_pm3_hf.ncd image 2s30vq100 11-09-2025 14:31:08");
+    });
+
     it("returns unknown firmware when no match", () => {
         const output = `connected, no version info`;
         const result = parseHwStatus(output);
@@ -46,6 +53,16 @@ describe("parseHwTune", () => {
         const result = parseHwTune(output);
         expect(result.lfVoltage).toBeCloseTo(29.84);
         expect(result.hfVoltage).toBeCloseTo(24.56);
+    });
+
+    it("parses dotted separator format", () => {
+        const output = `
+[+] 125.00 kHz ........... 23.83 V
+[+] 13.56 MHz............. 15.36 V
+        `;
+        const result = parseHwTune(output);
+        expect(result.lfVoltage).toBeCloseTo(23.83);
+        expect(result.hfVoltage).toBeCloseTo(15.36);
     });
 
     it("returns zero for missing values", () => {

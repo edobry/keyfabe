@@ -27,14 +27,15 @@ export function parseHwStatus(output: string): HwStatus {
     const connected = !output.includes("cannot communicate") && !output.includes("ERROR");
     const fwMatch = output.match(/firmware[^:]*:\s*(.+)/i)
         ?? output.match(/os:\s*(.+)/i)
-        ?? output.match(/bootrom:\s*(.+)/i);
+        ?? output.match(/bootrom:\s*(.+)/i)
+        ?? output.match(/mode\.+\s*(.+)/i);
     const firmwareVersion = fwMatch?.[1]?.trim() ?? "unknown";
     return { connected, firmwareVersion };
 }
 
 export function parseHwTune(output: string): HwTune {
-    const lfMatch = output.match(/125(?:\.00)?\s*kHz[^:]*:\s*([\d.]+)\s*V/i);
-    const hfMatch = output.match(/13\.56\s*MHz[^:]*:\s*([\d.]+)\s*V/i);
+    const lfMatch = output.match(/125(?:\.00)?\s*kHz[^\d]*([\d.]+)\s*V/i);
+    const hfMatch = output.match(/13\.56\s*MHz[^\d]*([\d.]+)\s*V/i);
     return {
         lfVoltage: lfMatch ? parseFloat(lfMatch[1]) : 0,
         hfVoltage: hfMatch ? parseFloat(hfMatch[1]) : 0,
