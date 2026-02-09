@@ -1,13 +1,10 @@
 import chalk from "chalk";
 import ora from "ora";
-import { pm3Exec, detectPort, Pm3Error } from "../lib/pm3.js";
 import { parseHwStatus, parseHwTune } from "../lib/parsers.js";
+import { detectPort, Pm3Error, pm3Exec } from "../lib/pm3.js";
 
-export async function doctor(): Promise<void> {
+export async function doctor(): Promise<boolean> {
     console.log(chalk.bold("\nProxmark3 Health Check\n"));
-
-    // 0. Check pm3 is installed
-    let pm3Installed = true;
 
     // 1. Port detection
     const port = await detectPort();
@@ -15,7 +12,7 @@ export async function doctor(): Promise<void> {
         console.log(chalk.green(`  Port:     ${port}`));
     } else {
         console.log(chalk.red("  Port:     No Proxmark3 detected. Check USB connection."));
-        return;
+        return false;
     }
 
     // 2. Communication check
@@ -26,8 +23,12 @@ export async function doctor(): Promise<void> {
 
         if (!status.connected) {
             spinner.fail("Cannot communicate with device.");
-            console.log(chalk.yellow("  Device found but firmware is incompatible. Run `keyfabe setup` to flash Iceman firmware."));
-            return;
+            console.log(
+                chalk.yellow(
+                    "  Device found but firmware is incompatible. Run `keyfabe setup` to flash Iceman firmware.",
+                ),
+            );
+            return false;
         }
 
         spinner.succeed("Device communication OK");
@@ -44,7 +45,7 @@ export async function doctor(): Promise<void> {
         } else {
             spinner.fail("Failed to communicate with device.");
         }
-        return;
+        return false;
     }
 
     // 3. Antenna tuning
@@ -75,4 +76,5 @@ export async function doctor(): Promise<void> {
     }
 
     console.log();
+    return true;
 }

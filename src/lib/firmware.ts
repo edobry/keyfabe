@@ -29,21 +29,29 @@ export async function execCommand(
     opts?: { timeout?: number; cwd?: string },
 ): Promise<ExecResult> {
     return new Promise((resolve, reject) => {
-        execFile(cmd, args, {
-            timeout: opts?.timeout ?? 120_000,
-            cwd: opts?.cwd,
-        }, (error, stdout, stderr) => {
-            const out = stdout?.toString() ?? "";
-            const err = stderr?.toString() ?? "";
-            if (error) {
-                const e = new Error(`${cmd} failed: ${error.message}`) as Error & { stdout: string; stderr: string };
-                e.stdout = out;
-                e.stderr = err;
-                reject(e);
-                return;
-            }
-            resolve({ stdout: out, stderr: err });
-        });
+        execFile(
+            cmd,
+            args,
+            {
+                timeout: opts?.timeout ?? 120_000,
+                cwd: opts?.cwd,
+            },
+            (error, stdout, stderr) => {
+                const out = stdout?.toString() ?? "";
+                const err = stderr?.toString() ?? "";
+                if (error) {
+                    const e = new Error(`${cmd} failed: ${error.message}`) as Error & {
+                        stdout: string;
+                        stderr: string;
+                    };
+                    e.stdout = out;
+                    e.stderr = err;
+                    reject(e);
+                    return;
+                }
+                resolve({ stdout: out, stderr: err });
+            },
+        );
     });
 }
 
@@ -57,11 +65,9 @@ export async function checkInstalled(binary: string): Promise<boolean> {
 }
 
 export async function findBrewCache(): Promise<string> {
-    const { stdout } = await execCommand(
-        "brew",
-        ["--cache", "rfidresearchgroup/proxmark3/proxmark3"],
-        { timeout: 10_000 },
-    );
+    const { stdout } = await execCommand("brew", ["--cache", "rfidresearchgroup/proxmark3/proxmark3"], {
+        timeout: 10_000,
+    });
     const path = stdout.trim();
     if (!path) {
         throw new Error("Proxmark3 not installed via Homebrew.");
@@ -71,24 +77,16 @@ export async function findBrewCache(): Promise<string> {
 
 export async function buildFirmware(sourceDir: string): Promise<void> {
     await execCommand("make", ["clean"], { cwd: sourceDir, timeout: 30_000 });
-    await execCommand(
-        "make",
-        ["-j4", "bootrom", "fullimage", ...BUILD_FLAGS],
-        { cwd: sourceDir, timeout: 120_000 },
-    );
+    await execCommand("make", ["-j4", "bootrom", "fullimage", ...BUILD_FLAGS], { cwd: sourceDir, timeout: 120_000 });
 }
 
 export async function flashFirmware(port: string, sourceDir: string): Promise<void> {
     const bootrom = `${sourceDir}/bootrom/obj/bootrom.elf`;
     const fullimage = `${sourceDir}/armsrc/obj/fullimage.elf`;
 
-    await execCommand("proxmark3", [
-        port,
-        "--flash",
-        "--unlock-bootloader",
-        "--image", bootrom,
-        "--image", fullimage,
-    ], { timeout: 60_000 });
+    await execCommand("proxmark3", [port, "--flash", "--unlock-bootloader", "--image", bootrom, "--image", fullimage], {
+        timeout: 60_000,
+    });
 }
 
 export async function waitForDevice(timeoutMs = 15_000): Promise<string | null> {
@@ -98,7 +96,7 @@ export async function waitForDevice(timeoutMs = 15_000): Promise<string | null> 
     while (Date.now() - start < timeoutMs) {
         const port = await detectPort();
         if (port) return port;
-        await new Promise(resolve => setTimeout(resolve, interval));
+        await new Promise((resolve) => setTimeout(resolve, interval));
     }
 
     return null;

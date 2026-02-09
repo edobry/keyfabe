@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../../src/lib/pm3.js", () => ({
     pm3Exec: vi.fn(),
@@ -33,9 +33,9 @@ vi.mock("ora", () => ({
     }),
 }));
 
+import { write } from "../../src/commands/write.js";
 import { pm3Exec } from "../../src/lib/pm3.js";
 import { getFob } from "../../src/lib/store.js";
-import { write } from "../../src/commands/write.js";
 
 const mockPm3Exec = vi.mocked(pm3Exec);
 const mockGetFob = vi.mocked(getFob);
@@ -64,7 +64,7 @@ describe("write", () => {
 
         await write("front-door");
 
-        const calls = (console.log as ReturnType<typeof vi.fn>).mock.calls.map(c => c[0]);
+        const calls = (console.log as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0]);
         const output = calls.join("\n");
         expect(output).toContain("Write successful");
     });
@@ -74,7 +74,7 @@ describe("write", () => {
 
         await write("nonexistent");
 
-        const calls = (console.log as ReturnType<typeof vi.fn>).mock.calls.map(c => c[0]);
+        const calls = (console.log as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0]);
         const output = calls.join("\n");
         expect(output).toContain("No saved fob");
         expect(mockPm3Exec).not.toHaveBeenCalled();

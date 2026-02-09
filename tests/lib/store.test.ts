@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { mkdtemp, rm, readFile, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Fob } from "../../src/lib/store.js";
 
 let tmpDir: string;
@@ -99,5 +99,26 @@ describe("getFob", () => {
         const { getFob } = await importStore();
         const fob = await getFob("nonexistent");
         expect(fob).toBeUndefined();
+    });
+});
+
+describe("removeFob", () => {
+    it("removes existing fob and returns true", async () => {
+        const { saveFob, removeFob, loadFobs } = await importStore();
+        await saveFob({ name: "to-delete", type: "EM410x", id: "AABBCCDDEE", savedAt: "2024-01-01" });
+        await saveFob({ name: "keep", type: "EM410x", id: "1122334455", savedAt: "2024-01-02" });
+
+        const result = await removeFob("to-delete");
+        expect(result).toBe(true);
+
+        const fobs = await loadFobs();
+        expect(fobs).toHaveLength(1);
+        expect(fobs[0].name).toBe("keep");
+    });
+
+    it("returns false for unknown name", async () => {
+        const { removeFob } = await importStore();
+        const result = await removeFob("nonexistent");
+        expect(result).toBe(false);
     });
 });

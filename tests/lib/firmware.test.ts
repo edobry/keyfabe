@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("node:child_process", () => ({
     execFile: vi.fn(),
@@ -9,15 +9,15 @@ vi.mock("../../src/lib/pm3.js", () => ({
 }));
 
 import { execFile } from "node:child_process";
-import { detectPort } from "../../src/lib/pm3.js";
 import {
-    execCommand,
-    checkInstalled,
-    findBrewCache,
     buildFirmware,
+    checkInstalled,
+    execCommand,
+    findBrewCache,
     flashFirmware,
     waitForDevice,
 } from "../../src/lib/firmware.js";
+import { detectPort } from "../../src/lib/pm3.js";
 
 const mockExecFile = vi.mocked(execFile);
 const mockDetectPort = vi.mocked(detectPort);

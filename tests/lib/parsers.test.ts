@@ -1,10 +1,10 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
+    parseCloneResult,
     parseHwStatus,
     parseHwTune,
     parseLfSearch,
     parseT55xxDetect,
-    parseCloneResult,
 } from "../../src/lib/parsers.js";
 
 describe("parseHwStatus", () => {

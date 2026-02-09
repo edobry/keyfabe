@@ -25,10 +25,11 @@ export interface CloneResult {
 
 export function parseHwStatus(output: string): HwStatus {
     const connected = !output.includes("cannot communicate") && !output.includes("ERROR");
-    const fwMatch = output.match(/firmware[^:]*:\s*(.+)/i)
-        ?? output.match(/os:\s*(.+)/i)
-        ?? output.match(/bootrom:\s*(.+)/i)
-        ?? output.match(/mode\.+\s*(.+)/i);
+    const fwMatch =
+        output.match(/firmware[^:]*:\s*(.+)/i) ??
+        output.match(/os:\s*(.+)/i) ??
+        output.match(/bootrom:\s*(.+)/i) ??
+        output.match(/mode\.+\s*(.+)/i);
     const firmwareVersion = fwMatch?.[1]?.trim() ?? "unknown";
     return { connected, firmwareVersion };
 }
@@ -67,8 +68,7 @@ export function parseLfSearch(output: string): CardInfo | null {
 }
 
 export function parseT55xxDetect(output: string): T55xxInfo | null {
-    const chipMatch = output.match(/Chip\s*Type\s*[:\s]*(T55\w+)/i)
-        ?? output.match(/(T55\w+)\s*(?:found|detected)/i);
+    const chipMatch = output.match(/Chip\s*Type\s*[:\s]*(T55\w+)/i) ?? output.match(/(T55\w+)\s*(?:found|detected)/i);
     if (!chipMatch) {
         // Also check for general detection success
         if (!output.includes("T55") && !output.includes("t55")) {
@@ -76,8 +76,7 @@ export function parseT55xxDetect(output: string): T55xxInfo | null {
         }
     }
 
-    const passwordSet = /password\s*(?:is\s*)?set/i.test(output)
-        || /password\s*[:\s]*yes/i.test(output);
+    const passwordSet = /password\s*(?:is\s*)?set/i.test(output) || /password\s*[:\s]*yes/i.test(output);
 
     return {
         chipType: chipMatch?.[1] ?? "T55x7",

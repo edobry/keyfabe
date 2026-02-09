@@ -1,11 +1,11 @@
 import chalk from "chalk";
 import ora from "ora";
-import { pm3Exec, Pm3Error } from "../lib/pm3.js";
-import { parseLfSearch, type CardInfo } from "../lib/parsers.js";
-import { saveFob } from "../lib/store.js";
+import { type CardInfo, parseLfSearch } from "../lib/parsers.js";
+import { Pm3Error, pm3Exec } from "../lib/pm3.js";
 import { promptName } from "../lib/prompts.js";
+import { saveFob } from "../lib/store.js";
 
-export async function read(): Promise<void> {
+export async function read(): Promise<boolean> {
     let card: CardInfo | null = null;
 
     // Try LF search
@@ -16,7 +16,7 @@ export async function read(): Promise<void> {
     } catch (err) {
         if (err instanceof Pm3Error) {
             spinner.fail(err.message);
-            return;
+            return false;
         }
     }
 
@@ -34,7 +34,7 @@ export async function read(): Promise<void> {
 
     if (!card) {
         spinner.fail("No card detected. Make sure the fob is flat against the antenna.");
-        return;
+        return false;
     }
 
     spinner.succeed("Card detected");
@@ -57,4 +57,5 @@ export async function read(): Promise<void> {
         });
         console.log(chalk.green(`Saved as "${name}".`));
     }
+    return true;
 }

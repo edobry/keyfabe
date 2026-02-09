@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("node:child_process", () => ({
     execFile: vi.fn(),
@@ -10,7 +10,7 @@ vi.mock("node:fs/promises", () => ({
 
 import { execFile } from "node:child_process";
 import { readdir } from "node:fs/promises";
-import { pm3Exec, detectPort, Pm3Error } from "../../src/lib/pm3.js";
+import { detectPort, Pm3Error, pm3Exec } from "../../src/lib/pm3.js";
 
 const mockExecFile = vi.mocked(execFile);
 const mockReaddir = vi.mocked(readdir);
@@ -76,11 +76,7 @@ describe("pm3Exec", () => {
 
 describe("detectPort", () => {
     it("finds tty.usbmodem entry", async () => {
-        mockReaddir.mockResolvedValue([
-            "tty.Bluetooth-Incoming-Port",
-            "tty.usbmodem1234",
-            "cu.usbmodem1234",
-        ] as any);
+        mockReaddir.mockResolvedValue(["tty.Bluetooth-Incoming-Port", "tty.usbmodem1234", "cu.usbmodem1234"] as any);
 
         const port = await detectPort();
         expect(port).toBe("/dev/tty.usbmodem1234");

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../../src/lib/pm3.js", () => ({
     pm3Exec: vi.fn(),
@@ -31,10 +31,10 @@ vi.mock("ora", () => ({
     }),
 }));
 
-import { pm3Exec } from "../../src/lib/pm3.js";
-import { saveFob } from "../../src/lib/store.js";
-import { promptName } from "../../src/lib/prompts.js";
 import { read } from "../../src/commands/read.js";
+import { pm3Exec } from "../../src/lib/pm3.js";
+import { promptName } from "../../src/lib/prompts.js";
+import { saveFob } from "../../src/lib/store.js";
 
 const mockPm3Exec = vi.mocked(pm3Exec);
 const mockSaveFob = vi.mocked(saveFob);
@@ -55,19 +55,17 @@ describe("read", () => {
 
         await read();
 
-        const calls = (console.log as ReturnType<typeof vi.fn>).mock.calls.map(c => c[0]);
+        const calls = (console.log as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0]);
         const output = calls.join("\n");
         expect(output).toContain("EM410x");
         expect(output).toContain("1A2B3C4D5E");
     });
 
     it("LF miss, HF fallback tries hf search", async () => {
-        mockPm3Exec
-            .mockResolvedValueOnce({ stdout: "no known cards", stderr: "" })
-            .mockResolvedValueOnce({
-                stdout: "[+] EM 410x Tag ID: AABBCCDDEE",
-                stderr: "",
-            });
+        mockPm3Exec.mockResolvedValueOnce({ stdout: "no known cards", stderr: "" }).mockResolvedValueOnce({
+            stdout: "[+] EM 410x Tag ID: AABBCCDDEE",
+            stderr: "",
+        });
         mockPromptName.mockResolvedValue(null);
 
         await read();

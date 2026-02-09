@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../../src/lib/pm3.js", () => ({
     pm3Exec: vi.fn(),
@@ -24,8 +24,8 @@ vi.mock("ora", () => ({
     }),
 }));
 
-import { pm3Exec, detectPort, Pm3Error } from "../../src/lib/pm3.js";
 import { doctor } from "../../src/commands/doctor.js";
+import { detectPort, Pm3Error, pm3Exec } from "../../src/lib/pm3.js";
 
 const mockPm3Exec = vi.mocked(pm3Exec);
 const mockDetectPort = vi.mocked(detectPort);
@@ -51,7 +51,7 @@ describe("doctor", () => {
 
         await doctor();
 
-        const calls = (console.log as ReturnType<typeof vi.fn>).mock.calls.map(c => c[0]);
+        const calls = (console.log as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0]);
         const output = calls.join("\n");
         expect(output).toContain("tty.usbmodem1234");
         expect(output).toContain("29.84");
@@ -62,7 +62,7 @@ describe("doctor", () => {
 
         await doctor();
 
-        const calls = (console.log as ReturnType<typeof vi.fn>).mock.calls.map(c => c[0]);
+        const calls = (console.log as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0]);
         const output = calls.join("\n");
         expect(output).toContain("No Proxmark3 detected");
         expect(mockPm3Exec).not.toHaveBeenCalled();
@@ -77,7 +77,7 @@ describe("doctor", () => {
 
         await doctor();
 
-        const calls = (console.log as ReturnType<typeof vi.fn>).mock.calls.map(c => c[0]);
+        const calls = (console.log as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0]);
         const output = calls.join("\n");
         expect(output).toContain("keyfabe setup");
         expect(output).toContain("firmware is incompatible");
@@ -93,7 +93,7 @@ describe("doctor", () => {
 
         await doctor();
 
-        const calls = (console.log as ReturnType<typeof vi.fn>).mock.calls.map(c => c[0]);
+        const calls = (console.log as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0]);
         const output = calls.join("\n");
         expect(output).toContain("brew tap rfidresearchgroup/proxmark3");
         expect(mockPm3Exec).toHaveBeenCalledTimes(1);
@@ -113,7 +113,7 @@ describe("doctor", () => {
 
         await doctor();
 
-        const calls = (console.log as ReturnType<typeof vi.fn>).mock.calls.map(c => c[0]);
+        const calls = (console.log as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0]);
         const output = calls.join("\n");
         expect(output).toContain("LF antenna reading low");
         expect(output).toContain("HF antenna reading low");

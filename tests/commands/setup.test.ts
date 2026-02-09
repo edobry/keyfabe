@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../../src/lib/pm3.js", () => ({
     pm3Exec: vi.fn(),
@@ -38,17 +38,17 @@ vi.mock("ora", () => ({
     }),
 }));
 
-import { pm3Exec, detectPort, Pm3Error } from "../../src/lib/pm3.js";
+import { setup } from "../../src/commands/setup.js";
 import {
-    checkInstalled,
-    findBrewCache,
     buildFirmware,
+    checkInstalled,
+    execCommand,
+    findBrewCache,
     flashFirmware,
     waitForDevice,
-    execCommand,
 } from "../../src/lib/firmware.js";
+import { detectPort, pm3Exec } from "../../src/lib/pm3.js";
 import { confirm } from "../../src/lib/prompts.js";
-import { setup } from "../../src/commands/setup.js";
 
 const mockPm3Exec = vi.mocked(pm3Exec);
 const mockDetectPort = vi.mocked(detectPort);
@@ -66,7 +66,7 @@ beforeEach(() => {
 });
 
 function getOutput(): string {
-    return (console.log as ReturnType<typeof vi.fn>).mock.calls.map(c => c[0]).join("\n");
+    return (console.log as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0]).join("\n");
 }
 
 describe("setup", () => {
@@ -74,7 +74,7 @@ describe("setup", () => {
         // Prerequisites all pass
         mockCheckInstalled.mockResolvedValue(true);
         mockDetectPort
-            .mockResolvedValueOnce("/dev/tty.usbmodem1234")  // initial detection
+            .mockResolvedValueOnce("/dev/tty.usbmodem1234") // initial detection
             .mockResolvedValueOnce("/dev/tty.usbmodem1234"); // pre-flash detection
 
         // hw status shows incompatible firmware
@@ -153,8 +153,8 @@ describe("setup", () => {
 
     it("make not installed: prints install instructions", async () => {
         mockCheckInstalled
-            .mockResolvedValueOnce(true)   // pm3
-            .mockResolvedValueOnce(false);  // make
+            .mockResolvedValueOnce(true) // pm3
+            .mockResolvedValueOnce(false); // make
 
         await setup();
 
@@ -165,9 +165,9 @@ describe("setup", () => {
 
     it("proxmark3 flasher not installed: prints install instructions", async () => {
         mockCheckInstalled
-            .mockResolvedValueOnce(true)   // pm3
-            .mockResolvedValueOnce(true)   // make
-            .mockResolvedValueOnce(false);  // proxmark3
+            .mockResolvedValueOnce(true) // pm3
+            .mockResolvedValueOnce(true) // make
+            .mockResolvedValueOnce(false); // proxmark3
 
         await setup();
 

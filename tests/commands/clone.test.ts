@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../../src/lib/pm3.js", () => ({
     pm3Exec: vi.fn(),
@@ -32,10 +32,10 @@ vi.mock("ora", () => ({
     }),
 }));
 
+import { clone, writeAndVerify } from "../../src/commands/clone.js";
 import { pm3Exec } from "../../src/lib/pm3.js";
-import { saveFob } from "../../src/lib/store.js";
 import { promptName } from "../../src/lib/prompts.js";
-import { writeAndVerify, clone } from "../../src/commands/clone.js";
+import { saveFob } from "../../src/lib/store.js";
 
 const mockPm3Exec = vi.mocked(pm3Exec);
 const mockSaveFob = vi.mocked(saveFob);
@@ -134,7 +134,7 @@ describe("clone", () => {
 
         await clonePromise;
 
-        const calls = (console.log as ReturnType<typeof vi.fn>).mock.calls.map(c => c[0]);
+        const calls = (console.log as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0]);
         const output = calls.join("\n");
         expect(output).toContain("Failed to read original card");
         expect(mockPm3Exec).toHaveBeenCalledTimes(3);

@@ -1,18 +1,18 @@
 import chalk from "chalk";
 import ora from "ora";
-import { pm3Exec, detectPort, Pm3Error } from "../lib/pm3.js";
-import { parseHwStatus, parseHwTune } from "../lib/parsers.js";
-import { confirm } from "../lib/prompts.js";
 import {
-    checkInstalled,
-    findBrewCache,
     buildFirmware,
+    checkInstalled,
+    execCommand,
+    findBrewCache,
     flashFirmware,
     waitForDevice,
-    execCommand,
 } from "../lib/firmware.js";
+import { parseHwStatus, parseHwTune } from "../lib/parsers.js";
+import { detectPort, Pm3Error, pm3Exec } from "../lib/pm3.js";
+import { confirm } from "../lib/prompts.js";
 
-export async function setup(): Promise<void> {
+export async function setup(): Promise<boolean> {
     console.log(chalk.bold("\nProxmark3 Firmware Setup Wizard\n"));
 
     // Step 1: Prerequisites
@@ -23,14 +23,14 @@ export async function setup(): Promise<void> {
         console.log(chalk.red("  pm3 not found."));
         console.log(chalk.yellow("  Install Proxmark3 client:"));
         console.log(chalk.yellow("    brew tap rfidresearchgroup/proxmark3 && brew install proxmark3"));
-        return;
+        return false;
     }
     console.log(chalk.green("  pm3:        installed"));
 
     const hasMake = await checkInstalled("make");
     if (!hasMake) {
         console.log(chalk.red("  make not found. Install Xcode Command Line Tools: xcode-select --install"));
-        return;
+        return false;
     }
     console.log(chalk.green("  make:       installed"));
 
@@ -39,14 +39,14 @@ export async function setup(): Promise<void> {
         console.log(chalk.red("  proxmark3 flasher not found."));
         console.log(chalk.yellow("  Install Proxmark3 client:"));
         console.log(chalk.yellow("    brew tap rfidresearchgroup/proxmark3 && brew install proxmark3"));
-        return;
+        return false;
     }
     console.log(chalk.green("  proxmark3:  installed"));
 
     const port = await detectPort();
     if (!port) {
         console.log(chalk.red("\n  No Proxmark3 detected. Plug in your device and try again."));
-        return;
+        return false;
     }
     console.log(chalk.green(`  device:     ${port}`));
 
@@ -62,14 +62,14 @@ export async function setup(): Promise<void> {
             diagSpinner.succeed("Firmware is already working.");
             console.log(chalk.green(`  Firmware: ${status.firmwareVersion}`));
             console.log(chalk.green("\n  No action needed. Device is ready to use."));
-            return;
+            return true;
         }
 
         diagSpinner.warn("Device found but firmware is incompatible. Proceeding with flash.");
     } catch (err) {
         if (err instanceof Pm3Error && err.message.includes("not found")) {
             diagSpinner.fail("pm3 command failed.");
-            return;
+            return false;
         }
         diagSpinner.warn("Cannot communicate with device. Proceeding with flash.");
     }
@@ -86,7 +86,7 @@ export async function setup(): Promise<void> {
         sourceSpinner.fail("Proxmark3 not installed via Homebrew.");
         console.log(chalk.yellow("  Install first:"));
         console.log(chalk.yellow("    brew tap rfidresearchgroup/proxmark3 && brew install proxmark3"));
-        return;
+        return false;
     }
 
     // Step 4: Build firmware
@@ -102,7 +102,7 @@ export async function setup(): Promise<void> {
         extractSpinner.succeed("Source extracted.");
     } catch (err) {
         extractSpinner.fail(`Failed to extract source: ${(err as Error).message}`);
-        return;
+        return false;
     }
 
     const buildSpinner = ora("Building firmware (this may take ~30s)...").start();
@@ -111,22 +111,24 @@ export async function setup(): Promise<void> {
         buildSpinner.succeed("Firmware built successfully.");
     } catch (err) {
         buildSpinner.fail(`Build failed: ${(err as Error).message}`);
-        return;
+        return false;
     }
 
     // Step 5: Flash
     console.log(chalk.bold("\nStep 5: Flashing firmware...\n"));
 
-    const shouldFlash = await confirm("Ready to flash firmware. This will overwrite the device's current firmware. Continue?");
+    const shouldFlash = await confirm(
+        "Ready to flash firmware. This will overwrite the device's current firmware. Continue?",
+    );
     if (!shouldFlash) {
-        console.log(chalk.yellow("  Flash cancelled. Build artifacts remain at: " + sourceDir));
-        return;
+        console.log(chalk.yellow(`  Flash cancelled. Build artifacts remain at: ${sourceDir}`));
+        return false;
     }
 
     const currentPort = await detectPort();
     if (!currentPort) {
         console.log(chalk.red("  Device disconnected. Plug it back in and try again."));
-        return;
+        return false;
     }
 
     const flashSpinner = ora("Flashing firmware...").start();
@@ -135,8 +137,10 @@ export async function setup(): Promise<void> {
         flashSpinner.succeed("Firmware flashed successfully.");
     } catch (err) {
         flashSpinner.fail(`Flash failed: ${(err as Error).message}`);
-        console.log(chalk.yellow("  If flash was interrupted, hold the button while plugging in to enter recovery mode."));
-        return;
+        console.log(
+            chalk.yellow("  If flash was interrupted, hold the button while plugging in to enter recovery mode."),
+        );
+        return false;
     }
 
     // Step 6: Post-flash verification
@@ -148,7 +152,7 @@ export async function setup(): Promise<void> {
         waitSpinner.fail("Device did not reappear after flash.");
         console.log(chalk.yellow("  Try unplugging and re-plugging the device."));
         console.log(chalk.yellow("  If it still doesn't work, hold the button while plugging in for recovery mode."));
-        return;
+        return false;
     }
     waitSpinner.succeed(`Device found at ${newPort}`);
 
@@ -160,14 +164,14 @@ export async function setup(): Promise<void> {
         if (!status.connected) {
             verifySpinner.fail("Communication still failing after flash.");
             console.log(chalk.yellow("  Try running `keyfabe setup` again."));
-            return;
+            return false;
         }
 
         verifySpinner.succeed("Communication OK");
         console.log(chalk.green(`  Firmware: ${status.firmwareVersion}`));
     } catch {
         verifySpinner.fail("Failed to verify communication.");
-        return;
+        return false;
     }
 
     const tuneSpinner = ora("Checking antenna tuning...").start();
@@ -182,4 +186,5 @@ export async function setup(): Promise<void> {
     }
 
     console.log(chalk.bold.green("\n  Setup complete! Device is ready to use.\n"));
+    return true;
 }

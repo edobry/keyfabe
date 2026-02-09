@@ -1,9 +1,9 @@
 import chalk from "chalk";
 import ora from "ora";
-import { pm3Exec, Pm3Error } from "../lib/pm3.js";
-import { parseLfSearch, parseT55xxDetect, parseCloneResult, type CardInfo } from "../lib/parsers.js";
+import { type CardInfo, parseCloneResult, parseLfSearch, parseT55xxDetect } from "../lib/parsers.js";
+import { Pm3Error, pm3Exec } from "../lib/pm3.js";
+import { promptName, waitForEnter } from "../lib/prompts.js";
 import { saveFob } from "../lib/store.js";
-import { waitForEnter, promptName } from "../lib/prompts.js";
 
 function cloneCommand(card: CardInfo): string {
     switch (card.type) {
@@ -78,7 +78,7 @@ export async function writeAndVerify(card: CardInfo): Promise<boolean> {
             return true;
         } else {
             verifySpinner.fail(
-                `Verification failed — readback ID ${readback?.id ?? "not found"} doesn't match ${card.id}. Try again.`
+                `Verification failed — readback ID ${readback?.id ?? "not found"} doesn't match ${card.id}. Try again.`,
             );
             return false;
         }
@@ -92,7 +92,7 @@ export async function writeAndVerify(card: CardInfo): Promise<boolean> {
     }
 }
 
-export async function clone(): Promise<void> {
+export async function clone(): Promise<boolean> {
     console.log(chalk.bold("\nKeyfob Clone\n"));
 
     // Step 1: Read original
@@ -122,13 +122,13 @@ export async function clone(): Promise<void> {
 
         if (attempt < maxRetries) {
             console.log(chalk.dim(`  Retrying in ${retryDelay / 1000}s...`));
-            await new Promise(r => setTimeout(r, retryDelay));
+            await new Promise((r) => setTimeout(r, retryDelay));
         }
     }
 
     if (!card) {
         console.log(chalk.red("\nFailed to read original card after all attempts."));
-        return;
+        return false;
     }
 
     console.log(chalk.bold(`\n  Type:     ${card.type}`));
@@ -156,7 +156,9 @@ export async function clone(): Promise<void> {
             });
             console.log(chalk.green(`Saved as "${name}".`));
         }
+        return true;
     } else {
         console.log(chalk.red("\nClone failed.\n"));
+        return false;
     }
 }

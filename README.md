@@ -48,6 +48,9 @@ keyfabe write <name>
 
 # list saved identities
 keyfabe list
+
+# delete a saved identity
+keyfabe delete <name>
 ```
 
 ## Commands
@@ -76,6 +79,10 @@ Writes a previously-saved identity to a blank T55x7 fob.
 
 Lists all saved fob identities from `~/.keyfabe/fobs.json`.
 
+### `keyfabe delete <name>`
+
+Deletes a saved fob identity.
+
 ## Supported Card Types
 
 | Type | Read | Clone | Notes |
@@ -88,11 +95,13 @@ Lists all saved fob identities from `~/.keyfabe/fobs.json`.
 
 ```sh
 npm run dev         # run directly with tsx
+npm run lint        # check lint + formatting (Biome)
+npm run lint:fix    # auto-fix lint + formatting
 npm test            # run tests
 npm run build       # compile TypeScript
 ```
 
-A pre-commit hook runs `npm test` and `npm run build` automatically on every commit.
+A pre-commit hook runs lint, test, and build automatically on every commit. CI does the same on push/PR via GitHub Actions.
 
 ## Architecture
 
@@ -106,6 +115,7 @@ src/
     clone.ts            # guided clone flow
     write.ts            # write saved identity
     list.ts             # list saved identities
+    delete.ts           # delete saved identity
   lib/
     pm3.ts              # spawns pm3 process, sends commands
     firmware.ts         # build/flash subprocess helpers

@@ -21,24 +21,24 @@ export interface Pm3Result {
 
 export async function pm3Exec(command: string, timeout = DEFAULT_TIMEOUT): Promise<Pm3Result> {
     return new Promise((resolve, reject) => {
-        const proc = execFile("pm3", ["-c", command], { timeout }, (error, stdout, stderr) => {
+        const _proc = execFile("pm3", ["-c", command], { timeout }, (error, stdout, stderr) => {
             const out = stdout?.toString() ?? "";
             const err = stderr?.toString() ?? "";
             if (error) {
                 // Still return output on non-zero exit — pm3 often exits non-zero
                 // but only reject on actual execution failures (ENOENT, timeout)
                 if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-                    reject(new Pm3Error(
-                        "pm3 command not found. Install Proxmark3 client: brew install proxmark3",
-                        out, err
-                    ));
+                    reject(
+                        new Pm3Error(
+                            "pm3 command not found. Install Proxmark3 client: brew install proxmark3",
+                            out,
+                            err,
+                        ),
+                    );
                     return;
                 }
                 if (error.killed) {
-                    reject(new Pm3Error(
-                        `pm3 command timed out after ${timeout}ms`,
-                        out, err
-                    ));
+                    reject(new Pm3Error(`pm3 command timed out after ${timeout}ms`, out, err));
                     return;
                 }
                 // Non-zero exit but we got output — return it
@@ -53,7 +53,7 @@ export async function pm3Exec(command: string, timeout = DEFAULT_TIMEOUT): Promi
 export async function detectPort(): Promise<string | null> {
     try {
         const entries = await readdir("/dev");
-        const match = entries.find(e => e.startsWith("tty.usbmodem"));
+        const match = entries.find((e) => e.startsWith("tty.usbmodem"));
         return match ? `/dev/${match}` : null;
     } catch {
         return null;
