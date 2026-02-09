@@ -8,6 +8,7 @@ A TypeScript CLI tool that wraps the Proxmark3 client to provide an ergonomic ke
 - Detects and surfaces common problems (device not found, firmware mismatch, antenna issues)
 - Stores cloned fob identities for later re-use
 - Walks you through flashing Iceman firmware on a stock Proxmark3 Easy
+- Export/import fob identities for backup and sharing
 
 ## Prerequisites
 
@@ -23,9 +24,13 @@ If your device has stock firmware, `keyfabe setup` will handle building and flas
 ## Install
 
 ```sh
-npm install
-npm run build
-npm link   # makes `keyfabe` available globally
+npm install -g keyfabe
+```
+
+Or run without installing:
+
+```sh
+npx keyfabe
 ```
 
 ## Usage
@@ -49,8 +54,20 @@ keyfabe write <name>
 # list saved identities
 keyfabe list
 
+# show details of a saved identity
+keyfabe show <name>
+
+# rename a saved identity
+keyfabe rename <old-name> <new-name>
+
 # delete a saved identity
 keyfabe delete <name>
+
+# export all saved identities as JSON
+keyfabe export > fobs.json
+
+# import identities from a JSON file
+keyfabe import fobs.json
 ```
 
 ## Commands
@@ -79,9 +96,25 @@ Writes a previously-saved identity to a blank T55x7 fob.
 
 Lists all saved fob identities from `~/.keyfabe/fobs.json`.
 
+### `keyfabe show <name>`
+
+Displays full details of a saved fob identity (type, ID, encoding, save date).
+
+### `keyfabe rename <old-name> <new-name>`
+
+Renames a saved fob identity.
+
 ### `keyfabe delete <name>`
 
 Deletes a saved fob identity.
+
+### `keyfabe export`
+
+Exports all saved fob identities as JSON to stdout. Pipe to a file for backup: `keyfabe export > fobs.json`.
+
+### `keyfabe import <file>`
+
+Imports fob identities from a JSON file. New names are added, existing names are updated.
 
 ## Supported Card Types
 
@@ -101,7 +134,7 @@ npm test            # run tests
 npm run build       # compile TypeScript
 ```
 
-A pre-commit hook runs lint, test, and build automatically on every commit. CI does the same on push/PR via GitHub Actions.
+A pre-commit hook runs lint, test, and build automatically on every commit. CI does the same on push/PR via GitHub Actions. Publishing to npm is handled by a separate workflow triggered by GitHub releases.
 
 ## Architecture
 
@@ -115,11 +148,17 @@ src/
     clone.ts            # guided clone flow
     write.ts            # write saved identity
     list.ts             # list saved identities
+    show.ts             # show saved identity details
+    rename.ts           # rename saved identity
     delete.ts           # delete saved identity
+    export.ts           # export identities as JSON
+    import.ts           # import identities from JSON
   lib/
     pm3.ts              # spawns pm3 process, sends commands
     firmware.ts         # build/flash subprocess helpers
     parsers.ts          # parse pm3 output (card type, ID, voltages)
     store.ts            # read/write ~/.keyfabe/fobs.json
+    card-ops.ts         # write-and-verify logic shared by clone/write
+    display.ts          # shared display helpers and constants
     prompts.ts          # interactive user prompts
 ```

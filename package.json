@@ -2,6 +2,7 @@
   "name": "keyfabe",
   "version": "0.1.0",
   "description": "CLI tool for Proxmark3 keyfob cloning",
+  "license": "MIT",
   "type": "module",
   "bin": {
     "keyfabe": "dist/index.js"
