@@ -1,12 +1,13 @@
 import chalk from "chalk";
+import { writeAndVerify } from "../lib/card-ops.js";
+import { printFobNotFound } from "../lib/display.js";
 import { waitForEnter } from "../lib/prompts.js";
 import { getFob } from "../lib/store.js";
-import { writeAndVerify } from "./clone.js";
 
 export async function write(name: string): Promise<boolean> {
     const fob = await getFob(name);
     if (!fob) {
-        console.log(chalk.red(`\nNo saved fob named "${name}". Use \`keyfabe list\` to see saved fobs.\n`));
+        printFobNotFound(name);
         return false;
     }
 
@@ -19,8 +20,7 @@ export async function write(name: string): Promise<boolean> {
     if (success) {
         console.log(chalk.green("\nWrite successful!\n"));
         return true;
-    } else {
-        console.log(chalk.red("\nWrite failed.\n"));
-        return false;
     }
+    console.log(chalk.red("\nWrite failed.\n"));
+    return false;
 }

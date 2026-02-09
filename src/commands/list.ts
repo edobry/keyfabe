@@ -1,12 +1,12 @@
 import chalk from "chalk";
 import { loadFobs } from "../lib/store.js";
 
-export async function list(): Promise<void> {
+export async function list(): Promise<boolean> {
     const fobs = await loadFobs();
 
     if (fobs.length === 0) {
         console.log(chalk.dim("\nNo saved fobs. Use `keyfabe read` or `keyfabe clone` to save one.\n"));
-        return;
+        return true;
     }
 
     const cols = {
@@ -28,4 +28,5 @@ export async function list(): Promise<void> {
         console.log(fob.name.padEnd(cols.name) + fob.type.padEnd(cols.type) + fob.id.padEnd(cols.id) + date);
     }
     console.log();
+    return true;
 }

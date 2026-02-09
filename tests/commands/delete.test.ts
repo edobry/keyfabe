@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { getOutput, setupBeforeEach } from "../helpers/mocks.js";
 
 vi.mock("../../src/lib/store.js", () => ({
     removeFob: vi.fn(),
@@ -10,8 +11,7 @@ import { removeFob } from "../../src/lib/store.js";
 const mockRemoveFob = vi.mocked(removeFob);
 
 beforeEach(() => {
-    vi.resetAllMocks();
-    vi.spyOn(console, "log").mockImplementation(() => {});
+    setupBeforeEach();
 });
 
 describe("deleteFob", () => {
@@ -22,8 +22,7 @@ describe("deleteFob", () => {
 
         expect(result).toBe(true);
         expect(mockRemoveFob).toHaveBeenCalledWith("front-door");
-        const calls = (console.log as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0]);
-        const output = calls.join("\n");
+        const output = getOutput();
         expect(output).toContain('Deleted "front-door"');
     });
 
@@ -33,8 +32,7 @@ describe("deleteFob", () => {
         const result = await deleteFob("nonexistent");
 
         expect(result).toBe(false);
-        const calls = (console.log as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0]);
-        const output = calls.join("\n");
+        const output = getOutput();
         expect(output).toContain("No saved fob");
     });
 });

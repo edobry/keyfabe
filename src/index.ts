@@ -32,7 +32,7 @@ program
     .argument("<name>", "name of the saved fob identity")
     .action(withExitCode(write));
 
-program.command("list").description("List all saved fob identities").action(list);
+program.command("list").description("List all saved fob identities").action(withExitCode(list));
 
 program.command("setup").description("Flash Iceman firmware to a stock Proxmark3 Easy").action(withExitCode(setup));
 

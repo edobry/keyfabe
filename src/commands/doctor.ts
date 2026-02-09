@@ -1,5 +1,6 @@
 import chalk from "chalk";
 import ora from "ora";
+import { HF_VOLTAGE_THRESHOLD, LF_VOLTAGE_THRESHOLD, printBrewInstall } from "../lib/display.js";
 import { parseHwStatus, parseHwTune } from "../lib/parsers.js";
 import { detectPort, Pm3Error, pm3Exec } from "../lib/pm3.js";
 
@@ -37,8 +38,7 @@ export async function doctor(): Promise<boolean> {
         if (err instanceof Pm3Error) {
             if (err.message.includes("not found")) {
                 spinner.fail("pm3 command not found.");
-                console.log(chalk.yellow("  Install Proxmark3 client:"));
-                console.log(chalk.yellow("    brew tap rfidresearchgroup/proxmark3 && brew install proxmark3"));
+                printBrewInstall();
             } else {
                 spinner.fail(err.message);
             }
@@ -55,16 +55,16 @@ export async function doctor(): Promise<boolean> {
         const tune = parseHwTune(stdout);
         tuneSpinner.succeed("Antenna tuning complete");
 
-        const lfColor = tune.lfVoltage >= 15 ? chalk.green : chalk.red;
-        const hfColor = tune.hfVoltage >= 10 ? chalk.green : chalk.red;
+        const lfColor = tune.lfVoltage >= LF_VOLTAGE_THRESHOLD ? chalk.green : chalk.red;
+        const hfColor = tune.hfVoltage >= HF_VOLTAGE_THRESHOLD ? chalk.green : chalk.red;
 
         console.log(lfColor(`  LF antenna: ${tune.lfVoltage.toFixed(2)}V (125 kHz)`));
         console.log(hfColor(`  HF antenna: ${tune.hfVoltage.toFixed(2)}V (13.56 MHz)`));
 
-        if (tune.lfVoltage < 15) {
+        if (tune.lfVoltage < LF_VOLTAGE_THRESHOLD) {
             console.log(chalk.yellow("  ⚠ LF antenna reading low. Check antenna connection."));
         }
-        if (tune.hfVoltage < 10) {
+        if (tune.hfVoltage < HF_VOLTAGE_THRESHOLD) {
             console.log(chalk.yellow("  ⚠ HF antenna reading low. Check antenna connection."));
         }
     } catch (err) {

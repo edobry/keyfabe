@@ -1,19 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { getOutput, mockOra, mockPm3Module, setupBeforeEach } from "../helpers/mocks.js";
 
-vi.mock("../../src/lib/pm3.js", () => ({
-    pm3Exec: vi.fn(),
-    detectPort: vi.fn(),
-    Pm3Error: class Pm3Error extends Error {
-        stdout: string;
-        stderr: string;
-        constructor(message: string, stdout: string, stderr: string) {
-            super(message);
-            this.name = "Pm3Error";
-            this.stdout = stdout;
-            this.stderr = stderr;
-        }
-    },
-}));
+mockPm3Module();
+mockOra();
 
 vi.mock("../../src/lib/firmware.js", () => ({
     checkInstalled: vi.fn(),
@@ -26,16 +15,6 @@ vi.mock("../../src/lib/firmware.js", () => ({
 
 vi.mock("../../src/lib/prompts.js", () => ({
     confirm: vi.fn(),
-}));
-
-vi.mock("ora", () => ({
-    default: () => ({
-        start: vi.fn().mockReturnThis(),
-        succeed: vi.fn().mockReturnThis(),
-        fail: vi.fn().mockReturnThis(),
-        warn: vi.fn().mockReturnThis(),
-        text: "",
-    }),
 }));
 
 import { setup } from "../../src/commands/setup.js";
@@ -61,49 +40,27 @@ const mockExecCommand = vi.mocked(execCommand);
 const mockConfirm = vi.mocked(confirm);
 
 beforeEach(() => {
-    vi.resetAllMocks();
-    vi.spyOn(console, "log").mockImplementation(() => {});
+    setupBeforeEach();
 });
-
-function getOutput(): string {
-    return (console.log as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0]).join("\n");
-}
 
 describe("setup", () => {
     it("happy path: prerequisites pass, firmware needed, build and flash succeed", async () => {
-        // Prerequisites all pass
         mockCheckInstalled.mockResolvedValue(true);
-        mockDetectPort
-            .mockResolvedValueOnce("/dev/tty.usbmodem1234") // initial detection
-            .mockResolvedValueOnce("/dev/tty.usbmodem1234"); // pre-flash detection
+        mockDetectPort.mockResolvedValueOnce("/dev/tty.usbmodem1234").mockResolvedValueOnce("/dev/tty.usbmodem1234");
 
-        // hw status shows incompatible firmware
         mockPm3Exec
             .mockResolvedValueOnce({ stdout: "ERROR: cannot communicate", stderr: "" })
-            // post-flash hw status
             .mockResolvedValueOnce({ stdout: "firmware version: v4.18484 - Iceman", stderr: "" })
-            // post-flash hw tune
             .mockResolvedValueOnce({
                 stdout: "# LF antenna:  125.00 kHz:  29.84 V\n# HF antenna:  13.56 MHz:  24.56 V",
                 stderr: "",
             });
 
-        // Brew cache found
         mockFindBrewCache.mockResolvedValue("/Users/test/Library/Caches/proxmark3.tar.xz");
-
-        // Extract succeeds
         mockExecCommand.mockResolvedValue({ stdout: "", stderr: "" });
-
-        // Build succeeds
         mockBuildFirmware.mockResolvedValue(undefined);
-
-        // User confirms flash
         mockConfirm.mockResolvedValue(true);
-
-        // Flash succeeds
         mockFlashFirmware.mockResolvedValue(undefined);
-
-        // Device reappears
         mockWaitForDevice.mockResolvedValue("/dev/tty.usbmodem5678");
 
         await setup();
@@ -142,7 +99,7 @@ describe("setup", () => {
     });
 
     it("pm3 not installed: prints brew install instructions", async () => {
-        mockCheckInstalled.mockResolvedValueOnce(false); // pm3
+        mockCheckInstalled.mockResolvedValueOnce(false);
 
         await setup();
 
@@ -152,9 +109,7 @@ describe("setup", () => {
     });
 
     it("make not installed: prints install instructions", async () => {
-        mockCheckInstalled
-            .mockResolvedValueOnce(true) // pm3
-            .mockResolvedValueOnce(false); // make
+        mockCheckInstalled.mockResolvedValueOnce(true).mockResolvedValueOnce(false);
 
         await setup();
 
@@ -164,10 +119,7 @@ describe("setup", () => {
     });
 
     it("proxmark3 flasher not installed: prints install instructions", async () => {
-        mockCheckInstalled
-            .mockResolvedValueOnce(true) // pm3
-            .mockResolvedValueOnce(true) // make
-            .mockResolvedValueOnce(false); // proxmark3
+        mockCheckInstalled.mockResolvedValueOnce(true).mockResolvedValueOnce(true).mockResolvedValueOnce(false);
 
         await setup();
 
@@ -184,7 +136,7 @@ describe("setup", () => {
         await setup();
 
         const output = getOutput();
-        expect(output).toContain("Install first");
+        expect(output).toContain("Install Proxmark3 client");
         expect(output).toContain("brew tap rfidresearchgroup/proxmark3");
     });
 

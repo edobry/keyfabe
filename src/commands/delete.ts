@@ -1,10 +1,11 @@
 import chalk from "chalk";
+import { printFobNotFound } from "../lib/display.js";
 import { removeFob } from "../lib/store.js";
 
 export async function deleteFob(name: string): Promise<boolean> {
     const removed = await removeFob(name);
     if (!removed) {
-        console.log(chalk.red(`\nNo saved fob named "${name}". Use \`keyfabe list\` to see saved fobs.\n`));
+        printFobNotFound(name);
         return false;
     }
     console.log(chalk.green(`\nDeleted "${name}".\n`));

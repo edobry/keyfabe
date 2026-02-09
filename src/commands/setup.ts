@@ -1,5 +1,6 @@
 import chalk from "chalk";
 import ora from "ora";
+import { printBrewInstall } from "../lib/display.js";
 import {
     buildFirmware,
     checkInstalled,
@@ -21,8 +22,7 @@ export async function setup(): Promise<boolean> {
     const hasPm3 = await checkInstalled("pm3");
     if (!hasPm3) {
         console.log(chalk.red("  pm3 not found."));
-        console.log(chalk.yellow("  Install Proxmark3 client:"));
-        console.log(chalk.yellow("    brew tap rfidresearchgroup/proxmark3 && brew install proxmark3"));
+        printBrewInstall();
         return false;
     }
     console.log(chalk.green("  pm3:        installed"));
@@ -37,8 +37,7 @@ export async function setup(): Promise<boolean> {
     const hasProxmark3 = await checkInstalled("proxmark3");
     if (!hasProxmark3) {
         console.log(chalk.red("  proxmark3 flasher not found."));
-        console.log(chalk.yellow("  Install Proxmark3 client:"));
-        console.log(chalk.yellow("    brew tap rfidresearchgroup/proxmark3 && brew install proxmark3"));
+        printBrewInstall();
         return false;
     }
     console.log(chalk.green("  proxmark3:  installed"));
@@ -84,8 +83,7 @@ export async function setup(): Promise<boolean> {
         sourceSpinner.succeed(`Found: ${tarball}`);
     } catch {
         sourceSpinner.fail("Proxmark3 not installed via Homebrew.");
-        console.log(chalk.yellow("  Install first:"));
-        console.log(chalk.yellow("    brew tap rfidresearchgroup/proxmark3 && brew install proxmark3"));
+        printBrewInstall();
         return false;
     }
 

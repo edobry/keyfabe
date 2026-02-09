@@ -1,18 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { getOutput, mockOra, mockPm3Module, setupBeforeEach } from "../helpers/mocks.js";
 
-vi.mock("../../src/lib/pm3.js", () => ({
-    pm3Exec: vi.fn(),
-    Pm3Error: class Pm3Error extends Error {
-        stdout: string;
-        stderr: string;
-        constructor(message: string, stdout: string, stderr: string) {
-            super(message);
-            this.name = "Pm3Error";
-            this.stdout = stdout;
-            this.stderr = stderr;
-        }
-    },
-}));
+mockPm3Module();
+mockOra();
 
 vi.mock("../../src/lib/store.js", () => ({
     saveFob: vi.fn(),
@@ -20,15 +10,6 @@ vi.mock("../../src/lib/store.js", () => ({
 
 vi.mock("../../src/lib/prompts.js", () => ({
     promptName: vi.fn(),
-}));
-
-vi.mock("ora", () => ({
-    default: () => ({
-        start: vi.fn().mockReturnThis(),
-        succeed: vi.fn().mockReturnThis(),
-        fail: vi.fn().mockReturnThis(),
-        text: "",
-    }),
 }));
 
 import { read } from "../../src/commands/read.js";
@@ -41,8 +22,7 @@ const mockSaveFob = vi.mocked(saveFob);
 const mockPromptName = vi.mocked(promptName);
 
 beforeEach(() => {
-    vi.resetAllMocks();
-    vi.spyOn(console, "log").mockImplementation(() => {});
+    setupBeforeEach();
 });
 
 describe("read", () => {
@@ -55,34 +35,19 @@ describe("read", () => {
 
         await read();
 
-        const calls = (console.log as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0]);
-        const output = calls.join("\n");
+        const output = getOutput();
         expect(output).toContain("EM410x");
         expect(output).toContain("1A2B3C4D5E");
     });
 
-    it("LF miss, HF fallback tries hf search", async () => {
-        mockPm3Exec.mockResolvedValueOnce({ stdout: "no known cards", stderr: "" }).mockResolvedValueOnce({
-            stdout: "[+] EM 410x Tag ID: AABBCCDDEE",
-            stderr: "",
-        });
-        mockPromptName.mockResolvedValue(null);
+    it("no card detected: prints error", async () => {
+        mockPm3Exec.mockResolvedValueOnce({ stdout: "no known cards", stderr: "" });
 
-        await read();
+        const result = await read();
 
-        expect(mockPm3Exec).toHaveBeenCalledTimes(2);
-        expect(mockPm3Exec).toHaveBeenNthCalledWith(1, "lf search");
-        expect(mockPm3Exec).toHaveBeenNthCalledWith(2, "hf search");
-    });
-
-    it("no card at all: prints error", async () => {
-        mockPm3Exec
-            .mockResolvedValueOnce({ stdout: "no known cards", stderr: "" })
-            .mockResolvedValueOnce({ stdout: "no known cards", stderr: "" });
-
-        await read();
-
+        expect(result).toBe(false);
         expect(mockPromptName).not.toHaveBeenCalled();
+        expect(mockPm3Exec).toHaveBeenCalledTimes(1);
     });
 
     it("user saves: calls saveFob", async () => {
