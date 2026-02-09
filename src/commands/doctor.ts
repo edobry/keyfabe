@@ -6,6 +6,9 @@ import { parseHwStatus, parseHwTune } from "../lib/parsers.js";
 export async function doctor(): Promise<void> {
     console.log(chalk.bold("\nProxmark3 Health Check\n"));
 
+    // 0. Check pm3 is installed
+    let pm3Installed = true;
+
     // 1. Port detection
     const port = await detectPort();
     if (port) {
@@ -23,7 +26,7 @@ export async function doctor(): Promise<void> {
 
         if (!status.connected) {
             spinner.fail("Cannot communicate with device.");
-            console.log(chalk.yellow("  Firmware may need reflashing — see session-log.md."));
+            console.log(chalk.yellow("  Device found but firmware is incompatible. Run `keyfabe setup` to flash Iceman firmware."));
             return;
         }
 
@@ -31,7 +34,13 @@ export async function doctor(): Promise<void> {
         console.log(chalk.green(`  Firmware: ${status.firmwareVersion}`));
     } catch (err) {
         if (err instanceof Pm3Error) {
-            spinner.fail(err.message);
+            if (err.message.includes("not found")) {
+                spinner.fail("pm3 command not found.");
+                console.log(chalk.yellow("  Install Proxmark3 client:"));
+                console.log(chalk.yellow("    brew tap rfidresearchgroup/proxmark3 && brew install proxmark3"));
+            } else {
+                spinner.fail(err.message);
+            }
         } else {
             spinner.fail("Failed to communicate with device.");
         }

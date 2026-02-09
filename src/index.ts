@@ -5,6 +5,7 @@ import { read } from "./commands/read.js";
 import { clone } from "./commands/clone.js";
 import { write } from "./commands/write.js";
 import { list } from "./commands/list.js";
+import { setup } from "./commands/setup.js";
 
 program
     .name("keyfabe")
@@ -31,5 +32,9 @@ program.command("write")
 program.command("list")
     .description("List all saved fob identities")
     .action(list);
+
+program.command("setup")
+    .description("Flash Iceman firmware to a stock Proxmark3 Easy")
+    .action(setup);
 
 program.parse();
