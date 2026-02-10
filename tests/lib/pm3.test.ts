@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@clack/prompts", () => ({
     log: {
-        error: vi.fn((...args: any[]) => console.log(...args)),
+        error: vi.fn(),
     },
 }));
 
@@ -16,7 +16,10 @@ vi.mock("node:fs/promises", () => ({
 
 import { execFile } from "node:child_process";
 import { readdir } from "node:fs/promises";
+import * as p from "@clack/prompts";
 import { detectPort, Pm3Error, pm3Exec, requireDevice } from "../../src/lib/pm3.js";
+
+const mockLogError = vi.mocked(p.log.error);
 
 const mockExecFile = vi.mocked(execFile);
 const mockReaddir = vi.mocked(readdir);
@@ -117,7 +120,6 @@ describe("requireDevice", () => {
 
         const result = await requireDevice();
         expect(result).toBe(false);
-        const output = (console.log as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0]).join("\n");
-        expect(output).toContain("No Proxmark3 detected");
+        expect(mockLogError).toHaveBeenCalledWith(expect.stringContaining("No Proxmark3 detected"));
     });
 });
