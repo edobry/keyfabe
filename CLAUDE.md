@@ -4,6 +4,13 @@
 
 - **Commit and push** after completing each logical unit of work, once lint/tests/build pass.
 - Don't wait for the user to ask — commit proactively when the work is done and verified.
+- **Housekeeping after feature work**: After completing a feature or significant change, proactively check and fix:
+  - README accuracy — do usage examples, command signatures, and descriptions still match the code?
+  - package.json metadata — repository, homepage, description, keywords up to date?
+  - .gitignore — any new artifacts that should be ignored?
+  - GitHub repo metadata — topics, description match the current state?
+  - Stale docs or comments referencing old behavior?
+  Don't wait to be asked — surface and fix these as part of finishing the work.
 
 ## Commit Messages
 

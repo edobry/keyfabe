@@ -35,7 +35,12 @@ npx keyfabe
 
 ## Usage
 
+Running `keyfabe` with no arguments launches an interactive wizard menu that guides you through all available actions.
+
 ```sh
+# launch interactive wizard
+keyfabe
+
 # check device connection, firmware, and antenna health
 keyfabe doctor
 
@@ -49,19 +54,19 @@ keyfabe clone
 keyfabe read
 
 # write a previously-saved identity to a blank fob
-keyfabe write <name>
+keyfabe write [name]
 
 # list saved identities
 keyfabe list
 
 # show details of a saved identity
-keyfabe show <name>
+keyfabe show [name]
 
 # rename a saved identity
-keyfabe rename <old-name> <new-name>
+keyfabe rename [old-name] [new-name]
 
 # delete a saved identity
-keyfabe delete <name>
+keyfabe delete [name]
 
 # export all saved identities as JSON
 keyfabe export > fobs.json
@@ -69,6 +74,8 @@ keyfabe export > fobs.json
 # import identities from a JSON file
 keyfabe import fobs.json
 ```
+
+Commands that take `[name]` arguments are fully optional — when omitted, you'll get an interactive fob picker.
 
 ## Commands
 
@@ -88,25 +95,25 @@ Guided clone flow: reads the original fob, detects a blank T55x7, writes the ID,
 
 Reads and identifies whatever fob is on the antenna. Supports EM410x and HID Prox. Optionally saves the identity.
 
-### `keyfabe write <name>`
+### `keyfabe write [name]`
 
-Writes a previously-saved identity to a blank T55x7 fob.
+Writes a previously-saved identity to a blank T55x7 fob. Without a name, presents an interactive picker.
 
 ### `keyfabe list`
 
 Lists all saved fob identities from `~/.keyfabe/fobs.json`.
 
-### `keyfabe show <name>`
+### `keyfabe show [name]`
 
-Displays full details of a saved fob identity (type, ID, encoding, save date).
+Displays full details of a saved fob identity (type, ID, encoding, save date). Without a name, presents an interactive picker.
 
-### `keyfabe rename <old-name> <new-name>`
+### `keyfabe rename [old-name] [new-name]`
 
-Renames a saved fob identity.
+Renames a saved fob identity. Missing arguments are prompted interactively.
 
-### `keyfabe delete <name>`
+### `keyfabe delete [name]`
 
-Deletes a saved fob identity.
+Deletes a saved fob identity. Without a name, presents an interactive picker.
 
 ### `keyfabe export`
 

@@ -13,6 +13,11 @@
   "engines": {
     "node": ">=20"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/edobry/keyfabe.git"
+  },
+  "homepage": "https://github.com/edobry/keyfabe",
   "keywords": [
     "proxmark3",
     "rfid",
