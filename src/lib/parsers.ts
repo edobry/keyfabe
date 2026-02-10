@@ -1,6 +1,7 @@
 export interface HwStatus {
     connected: boolean;
     firmwareVersion: string;
+    isStockFirmware: boolean;
 }
 
 export interface HwTune {
@@ -24,14 +25,15 @@ export interface CloneResult {
 }
 
 export function parseHwStatus(output: string): HwStatus {
-    const connected = !output.includes("cannot communicate") && !output.includes("ERROR");
+    const isStockFirmware = output.includes("unknown command");
+    const connected = !isStockFirmware && !output.includes("cannot communicate") && !output.includes("ERROR");
     const fwMatch =
         output.match(/firmware[^:]*:\s*(.+)/i) ??
         output.match(/os:\s*(.+)/i) ??
         output.match(/bootrom:\s*(.+)/i) ??
         output.match(/mode\.+\s*(.+)/i);
     const firmwareVersion = fwMatch?.[1]?.trim() ?? "unknown";
-    return { connected, firmwareVersion };
+    return { connected, firmwareVersion, isStockFirmware };
 }
 
 export function parseHwTune(output: string): HwTune {

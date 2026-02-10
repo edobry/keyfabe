@@ -20,6 +20,10 @@ export function printCardInfo(card: CardInfo) {
     console.log();
 }
 
+export function printDoctorHint() {
+    console.log(chalk.yellow("  Run `keyfabe doctor` to diagnose your setup.\n"));
+}
+
 export function printFobNotFound(name: string) {
     console.log(chalk.red(`\nNo saved fob named "${name}". Use \`keyfabe list\` to see saved fobs.\n`));
 }

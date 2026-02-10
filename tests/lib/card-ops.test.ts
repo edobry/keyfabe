@@ -1,13 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { mockOra, mockPm3Module, setupBeforeEach } from "../helpers/mocks.js";
+import { getOutput, mockOra, mockPm3Module, setupBeforeEach } from "../helpers/mocks.js";
 
 mockPm3Module();
 mockOra();
 
 import { writeAndVerify } from "../../src/lib/card-ops.js";
-import { pm3Exec } from "../../src/lib/pm3.js";
+import { Pm3Error, pm3Exec } from "../../src/lib/pm3.js";
 
 const mockPm3Exec = vi.mocked(pm3Exec);
+const MockPm3Error = Pm3Error as any;
 
 beforeEach(() => {
     setupBeforeEach();
@@ -53,5 +54,15 @@ describe("writeAndVerify", () => {
 
         const result = await writeAndVerify(card);
         expect(result).toBe(false);
+    });
+
+    it("pm3 not found in detect step: prints doctor hint", async () => {
+        mockPm3Exec.mockRejectedValueOnce(new MockPm3Error("pm3 command not found", "", ""));
+
+        const result = await writeAndVerify(card);
+
+        expect(result).toBe(false);
+        const output = getOutput();
+        expect(output).toContain("keyfabe doctor");
     });
 });

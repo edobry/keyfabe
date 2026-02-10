@@ -36,7 +36,11 @@ program
     .argument("<name>", "name of the saved fob identity")
     .action(withExitCode(write));
 
-program.command("list").description("List all saved fob identities").action(withExitCode(list));
+program
+    .command("list")
+    .description("List all saved fob identities")
+    .option("--json", "output as JSON")
+    .action(withExitCode(list));
 
 program
     .command("show")

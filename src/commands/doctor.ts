@@ -22,13 +22,17 @@ export async function doctor(): Promise<boolean> {
         const { stdout } = await pm3Exec("hw status");
         const status = parseHwStatus(stdout);
 
+        if (status.isStockFirmware) {
+            spinner.fail("Stock firmware detected.");
+            console.log(
+                chalk.yellow("  Firmware: Stock firmware detected. Run `keyfabe setup` to flash Iceman firmware."),
+            );
+            return false;
+        }
+
         if (!status.connected) {
             spinner.fail("Cannot communicate with device.");
-            console.log(
-                chalk.yellow(
-                    "  Device found but firmware is incompatible. Run `keyfabe setup` to flash Iceman firmware.",
-                ),
-            );
+            console.log(chalk.yellow("  Cannot communicate with device. Check connection and try `keyfabe setup`."));
             return false;
         }
 

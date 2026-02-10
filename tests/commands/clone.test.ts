@@ -19,7 +19,7 @@ vi.mock("../../src/lib/prompts.js", () => ({
 
 import { clone } from "../../src/commands/clone.js";
 import { writeAndVerify } from "../../src/lib/card-ops.js";
-import { pm3Exec, requireDevice } from "../../src/lib/pm3.js";
+import { Pm3Error, pm3Exec, requireDevice } from "../../src/lib/pm3.js";
 import { promptName } from "../../src/lib/prompts.js";
 import { saveFob } from "../../src/lib/store.js";
 
@@ -28,6 +28,7 @@ const mockRequireDevice = vi.mocked(requireDevice);
 const mockWriteAndVerify = vi.mocked(writeAndVerify);
 const mockSaveFob = vi.mocked(saveFob);
 const mockPromptName = vi.mocked(promptName);
+const MockPm3Error = Pm3Error as any;
 
 beforeEach(() => {
     setupBeforeEach();
@@ -106,5 +107,15 @@ describe("clone", () => {
         expect(result).toBe(false);
         const output = getOutput();
         expect(output).toContain("Clone failed");
+    });
+
+    it("pm3 not found during read: prints doctor hint", async () => {
+        mockPm3Exec.mockRejectedValueOnce(new MockPm3Error("pm3 command not found", "", ""));
+
+        const result = await clone();
+
+        expect(result).toBe(false);
+        const output = getOutput();
+        expect(output).toContain("keyfabe doctor");
     });
 });

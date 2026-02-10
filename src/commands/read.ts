@@ -1,6 +1,6 @@
 import chalk from "chalk";
 import ora from "ora";
-import { printCardInfo } from "../lib/display.js";
+import { printCardInfo, printDoctorHint } from "../lib/display.js";
 import { parseLfSearch } from "../lib/parsers.js";
 import { Pm3Error, pm3Exec, requireDevice } from "../lib/pm3.js";
 import { promptName } from "../lib/prompts.js";
@@ -18,6 +18,9 @@ export async function read(): Promise<boolean> {
     } catch (err) {
         if (err instanceof Pm3Error) {
             spinner.fail(err.message);
+            if (err.message.includes("not found")) {
+                printDoctorHint();
+            }
             return false;
         }
     }

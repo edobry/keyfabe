@@ -1,4 +1,5 @@
 import ora from "ora";
+import { printDoctorHint } from "./display.js";
 import { type CardInfo, parseCloneResult, parseLfSearch, parseT55xxDetect } from "./parsers.js";
 import { Pm3Error, pm3Exec } from "./pm3.js";
 
@@ -38,6 +39,9 @@ export async function writeAndVerify(card: CardInfo): Promise<boolean> {
     } catch (err) {
         if (err instanceof Pm3Error) {
             detectSpinner.fail(err.message);
+            if (err.message.includes("not found")) {
+                printDoctorHint();
+            }
         } else {
             detectSpinner.fail("Failed to detect writable card.");
         }
@@ -58,6 +62,9 @@ export async function writeAndVerify(card: CardInfo): Promise<boolean> {
     } catch (err) {
         if (err instanceof Pm3Error) {
             cloneSpinner.fail(err.message);
+            if (err.message.includes("not found")) {
+                printDoctorHint();
+            }
         } else {
             cloneSpinner.fail("Failed to write card data.");
         }
@@ -81,6 +88,9 @@ export async function writeAndVerify(card: CardInfo): Promise<boolean> {
     } catch (err) {
         if (err instanceof Pm3Error) {
             verifySpinner.fail(err.message);
+            if (err.message.includes("not found")) {
+                printDoctorHint();
+            }
         } else {
             verifySpinner.fail("Verification readback failed.");
         }

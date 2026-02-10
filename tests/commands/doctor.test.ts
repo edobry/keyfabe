@@ -45,6 +45,22 @@ describe("doctor", () => {
         expect(mockPm3Exec).not.toHaveBeenCalled();
     });
 
+    it("stock firmware: detects unknown command and suggests keyfabe setup", async () => {
+        mockDetectPort.mockResolvedValue("/dev/tty.usbmodem1234");
+        mockPm3Exec.mockResolvedValueOnce({
+            stdout: "[!!] unknown command 'hw status'",
+            stderr: "",
+        });
+
+        const result = await doctor();
+
+        expect(result).toBe(false);
+        const output = getOutput();
+        expect(output).toContain("Stock firmware detected");
+        expect(output).toContain("keyfabe setup");
+        expect(mockPm3Exec).toHaveBeenCalledTimes(1);
+    });
+
     it("communication failure: hw status shows error, suggests keyfabe setup", async () => {
         mockDetectPort.mockResolvedValue("/dev/tty.usbmodem1234");
         mockPm3Exec.mockResolvedValueOnce({
@@ -56,7 +72,7 @@ describe("doctor", () => {
 
         const output = getOutput();
         expect(output).toContain("keyfabe setup");
-        expect(output).toContain("firmware is incompatible");
+        expect(output).toContain("Cannot communicate with device");
         expect(mockPm3Exec).toHaveBeenCalledTimes(1);
     });
 
