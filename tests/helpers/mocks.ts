@@ -8,6 +8,7 @@ export function mockPm3Module() {
     vi.mock("../../src/lib/pm3.js", () => ({
         pm3Exec: vi.fn(),
         detectPort: vi.fn(),
+        requireDevice: vi.fn().mockResolvedValue(true),
         Pm3Error: class Pm3Error extends Error {
             stdout: string;
             stderr: string;

@@ -19,17 +19,19 @@ vi.mock("../../src/lib/prompts.js", () => ({
 
 import { clone } from "../../src/commands/clone.js";
 import { writeAndVerify } from "../../src/lib/card-ops.js";
-import { pm3Exec } from "../../src/lib/pm3.js";
+import { pm3Exec, requireDevice } from "../../src/lib/pm3.js";
 import { promptName } from "../../src/lib/prompts.js";
 import { saveFob } from "../../src/lib/store.js";
 
 const mockPm3Exec = vi.mocked(pm3Exec);
+const mockRequireDevice = vi.mocked(requireDevice);
 const mockWriteAndVerify = vi.mocked(writeAndVerify);
 const mockSaveFob = vi.mocked(saveFob);
 const mockPromptName = vi.mocked(promptName);
 
 beforeEach(() => {
     setupBeforeEach();
+    mockRequireDevice.mockResolvedValue(true);
 });
 
 describe("clone", () => {
@@ -80,6 +82,15 @@ describe("clone", () => {
         expect(mockWriteAndVerify).not.toHaveBeenCalled();
 
         vi.useRealTimers();
+    });
+
+    it("no device connected: returns false immediately", async () => {
+        mockRequireDevice.mockResolvedValueOnce(false);
+
+        const result = await clone();
+
+        expect(result).toBe(false);
+        expect(mockPm3Exec).not.toHaveBeenCalled();
     });
 
     it("writeAndVerify fails: prints clone failed", async () => {

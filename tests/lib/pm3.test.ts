@@ -10,13 +10,14 @@ vi.mock("node:fs/promises", () => ({
 
 import { execFile } from "node:child_process";
 import { readdir } from "node:fs/promises";
-import { detectPort, Pm3Error, pm3Exec } from "../../src/lib/pm3.js";
+import { detectPort, Pm3Error, pm3Exec, requireDevice } from "../../src/lib/pm3.js";
 
 const mockExecFile = vi.mocked(execFile);
 const mockReaddir = vi.mocked(readdir);
 
 beforeEach(() => {
     vi.resetAllMocks();
+    vi.spyOn(console, "log").mockImplementation(() => {});
 });
 
 describe("pm3Exec", () => {
@@ -94,5 +95,22 @@ describe("detectPort", () => {
 
         const port = await detectPort();
         expect(port).toBeNull();
+    });
+});
+
+describe("requireDevice", () => {
+    it("returns true when device is connected", async () => {
+        mockReaddir.mockResolvedValue(["tty.usbmodem1234"] as any);
+
+        const result = await requireDevice();
+        expect(result).toBe(true);
+    });
+
+    it("returns false and prints message when no device", async () => {
+        mockReaddir.mockResolvedValue(["tty.Bluetooth-Incoming-Port"] as any);
+
+        const result = await requireDevice();
+        expect(result).toBe(false);
+        expect(console.log).toHaveBeenCalledWith(expect.stringContaining("No Proxmark3 detected"));
     });
 });

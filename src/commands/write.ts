@@ -1,6 +1,7 @@
 import chalk from "chalk";
 import { writeAndVerify } from "../lib/card-ops.js";
 import { printFobNotFound } from "../lib/display.js";
+import { requireDevice } from "../lib/pm3.js";
 import { waitForEnter } from "../lib/prompts.js";
 import { getFob } from "../lib/store.js";
 
@@ -10,6 +11,8 @@ export async function write(name: string): Promise<boolean> {
         printFobNotFound(name);
         return false;
     }
+
+    if (!(await requireDevice())) return false;
 
     console.log(chalk.bold(`\nWriting "${fob.name}" (${fob.type} ${fob.id})\n`));
 

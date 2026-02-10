@@ -2,11 +2,13 @@ import chalk from "chalk";
 import ora from "ora";
 import { printCardInfo } from "../lib/display.js";
 import { parseLfSearch } from "../lib/parsers.js";
-import { Pm3Error, pm3Exec } from "../lib/pm3.js";
+import { Pm3Error, pm3Exec, requireDevice } from "../lib/pm3.js";
 import { promptName } from "../lib/prompts.js";
 import { saveFob } from "../lib/store.js";
 
 export async function read(): Promise<boolean> {
+    if (!(await requireDevice())) return false;
+
     let card: ReturnType<typeof parseLfSearch> = null;
 
     const spinner = ora("Searching for card (LF)...").start();

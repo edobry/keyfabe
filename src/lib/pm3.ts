@@ -1,5 +1,6 @@
 import { execFile } from "node:child_process";
 import { readdir } from "node:fs/promises";
+import chalk from "chalk";
 
 const DEFAULT_TIMEOUT = 30_000;
 
@@ -48,6 +49,15 @@ export async function pm3Exec(command: string, timeout = DEFAULT_TIMEOUT): Promi
             resolve({ stdout: out, stderr: err });
         });
     });
+}
+
+export async function requireDevice(): Promise<boolean> {
+    const port = await detectPort();
+    if (!port) {
+        console.log(chalk.red("\nNo Proxmark3 detected. Check USB connection.\n"));
+        return false;
+    }
+    return true;
 }
 
 export async function detectPort(): Promise<string | null> {

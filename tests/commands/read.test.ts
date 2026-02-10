@@ -13,16 +13,18 @@ vi.mock("../../src/lib/prompts.js", () => ({
 }));
 
 import { read } from "../../src/commands/read.js";
-import { pm3Exec } from "../../src/lib/pm3.js";
+import { pm3Exec, requireDevice } from "../../src/lib/pm3.js";
 import { promptName } from "../../src/lib/prompts.js";
 import { saveFob } from "../../src/lib/store.js";
 
 const mockPm3Exec = vi.mocked(pm3Exec);
+const mockRequireDevice = vi.mocked(requireDevice);
 const mockSaveFob = vi.mocked(saveFob);
 const mockPromptName = vi.mocked(promptName);
 
 beforeEach(() => {
     setupBeforeEach();
+    mockRequireDevice.mockResolvedValue(true);
 });
 
 describe("read", () => {
@@ -67,6 +69,15 @@ describe("read", () => {
                 id: "1A2B3C4D5E",
             }),
         );
+    });
+
+    it("no device connected: returns false immediately", async () => {
+        mockRequireDevice.mockResolvedValueOnce(false);
+
+        const result = await read();
+
+        expect(result).toBe(false);
+        expect(mockPm3Exec).not.toHaveBeenCalled();
     });
 
     it("user skips save: does not call saveFob", async () => {

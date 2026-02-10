@@ -3,7 +3,7 @@ import ora from "ora";
 import { writeAndVerify } from "../lib/card-ops.js";
 import { printCardInfo } from "../lib/display.js";
 import { parseLfSearch } from "../lib/parsers.js";
-import { Pm3Error, pm3Exec } from "../lib/pm3.js";
+import { Pm3Error, pm3Exec, requireDevice } from "../lib/pm3.js";
 import { promptName, waitForEnter } from "../lib/prompts.js";
 import { saveFob } from "../lib/store.js";
 
@@ -11,6 +11,8 @@ const MAX_READ_RETRIES = 3;
 const READ_RETRY_DELAY = 2000;
 
 export async function clone(): Promise<boolean> {
+    if (!(await requireDevice())) return false;
+
     console.log(chalk.bold("\nKeyfob Clone\n"));
 
     // Step 1: Read original
