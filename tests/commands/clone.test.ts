@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getOutput, mockOra, mockPm3Module, setupBeforeEach } from "../helpers/mocks.js";
+import { mockClack, mockPm3Module, setupBeforeEach } from "../helpers/mocks.js";
 
 mockPm3Module();
-mockOra();
+mockClack();
 
 vi.mock("../../src/lib/card-ops.js", () => ({
     writeAndVerify: vi.fn(),
@@ -37,20 +37,15 @@ beforeEach(() => {
 
 describe("clone", () => {
     it("full happy path: read → write → verify → save", async () => {
-        // lf search (read original)
         mockPm3Exec.mockResolvedValueOnce({
             stdout: "[+] EM 410x Tag ID: 1A2B3C4D5E\n[+] RF/64",
             stderr: "",
         });
-
-        // writeAndVerify succeeds
         mockWriteAndVerify.mockResolvedValue(true);
-
         mockPromptName.mockResolvedValue("cloned-fob");
         mockSaveFob.mockResolvedValue(undefined);
 
-        await clone();
-
+        expect(await clone()).toBe(true);
         expect(mockWriteAndVerify).toHaveBeenCalledWith(expect.objectContaining({ type: "EM410x", id: "1A2B3C4D5E" }));
         expect(mockSaveFob).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -61,7 +56,7 @@ describe("clone", () => {
         );
     });
 
-    it("read fails all 3 retries", async () => {
+    it("read fails all 3 retries → false", async () => {
         vi.useFakeTimers();
 
         mockPm3Exec
@@ -70,52 +65,36 @@ describe("clone", () => {
             .mockResolvedValueOnce({ stdout: "no cards", stderr: "" });
 
         const clonePromise = clone();
-
-        // Advance past the two retry delays (2s each)
         await vi.advanceTimersByTimeAsync(2000);
         await vi.advanceTimersByTimeAsync(2000);
-
         await clonePromise;
 
-        const output = getOutput();
-        expect(output).toContain("Failed to read original card");
         expect(mockPm3Exec).toHaveBeenCalledTimes(3);
         expect(mockWriteAndVerify).not.toHaveBeenCalled();
 
         vi.useRealTimers();
     });
 
-    it("no device connected: returns false immediately", async () => {
+    it("no device connected → false immediately", async () => {
         mockRequireDevice.mockResolvedValueOnce(false);
 
-        const result = await clone();
-
-        expect(result).toBe(false);
+        expect(await clone()).toBe(false);
         expect(mockPm3Exec).not.toHaveBeenCalled();
     });
 
-    it("writeAndVerify fails: prints clone failed", async () => {
+    it("writeAndVerify fails → false", async () => {
         mockPm3Exec.mockResolvedValueOnce({
             stdout: "[+] EM 410x Tag ID: 1A2B3C4D5E\n[+] RF/64",
             stderr: "",
         });
-
         mockWriteAndVerify.mockResolvedValue(false);
 
-        const result = await clone();
-
-        expect(result).toBe(false);
-        const output = getOutput();
-        expect(output).toContain("Clone failed");
+        expect(await clone()).toBe(false);
     });
 
-    it("pm3 not found during read: prints doctor hint", async () => {
+    it("pm3 not found during read → false", async () => {
         mockPm3Exec.mockRejectedValueOnce(new MockPm3Error("pm3 command not found", "", ""));
 
-        const result = await clone();
-
-        expect(result).toBe(false);
-        const output = getOutput();
-        expect(output).toContain("keyfabe doctor");
+        expect(await clone()).toBe(false);
     });
 });

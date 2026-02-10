@@ -1,5 +1,4 @@
-import chalk from "chalk";
-import ora from "ora";
+import * as p from "@clack/prompts";
 import { printCardInfo, printDoctorHint } from "../lib/display.js";
 import { parseLfSearch } from "../lib/parsers.js";
 import { Pm3Error, pm3Exec, requireDevice } from "../lib/pm3.js";
@@ -9,15 +8,19 @@ import { saveFob } from "../lib/store.js";
 export async function read(): Promise<boolean> {
     if (!(await requireDevice())) return false;
 
+    p.intro("Read Card");
+
     let card: ReturnType<typeof parseLfSearch> = null;
 
-    const spinner = ora("Searching for card (LF)...").start();
+    const s = p.spinner();
+    s.start("Searching for card (LF)...");
     try {
         const { stdout } = await pm3Exec("lf search");
         card = parseLfSearch(stdout);
     } catch (err) {
         if (err instanceof Pm3Error) {
-            spinner.fail(err.message);
+            s.stop(err.message);
+            p.log.error(err.message);
             if (err.message.includes("not found")) {
                 printDoctorHint();
             }
@@ -26,11 +29,12 @@ export async function read(): Promise<boolean> {
     }
 
     if (!card) {
-        spinner.fail("No card detected. Make sure the fob is flat against the antenna.");
+        s.stop("No card detected. Make sure the fob is flat against the antenna.");
+        p.log.error("No card detected. Make sure the fob is flat against the antenna.");
         return false;
     }
 
-    spinner.succeed("Card detected");
+    s.stop("Card detected");
     printCardInfo(card);
 
     // Prompt to save
@@ -43,7 +47,7 @@ export async function read(): Promise<boolean> {
             encoding: card.encoding,
             savedAt: new Date().toISOString(),
         });
-        console.log(chalk.green(`Saved as "${name}".`));
+        p.log.success(`Saved as "${name}".`);
     }
     return true;
 }

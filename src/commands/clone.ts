@@ -1,5 +1,4 @@
-import chalk from "chalk";
-import ora from "ora";
+import * as p from "@clack/prompts";
 import { writeAndVerify } from "../lib/card-ops.js";
 import { printCardInfo, printDoctorHint } from "../lib/display.js";
 import { parseLfSearch } from "../lib/parsers.js";
@@ -13,7 +12,7 @@ const READ_RETRY_DELAY = 2000;
 export async function clone(): Promise<boolean> {
     if (!(await requireDevice())) return false;
 
-    console.log(chalk.bold("\nKeyfob Clone\n"));
+    p.intro("Keyfob Clone");
 
     // Step 1: Read original
     await waitForEnter("Place your original keyfob on the antenna.");
@@ -21,34 +20,38 @@ export async function clone(): Promise<boolean> {
     let card: ReturnType<typeof parseLfSearch> = null;
 
     for (let attempt = 1; attempt <= MAX_READ_RETRIES; attempt++) {
-        const spinner = ora(`Reading original (attempt ${attempt}/${MAX_READ_RETRIES})...`).start();
+        const s = p.spinner();
+        s.start(`Reading original (attempt ${attempt}/${MAX_READ_RETRIES})...`);
         try {
             const { stdout } = await pm3Exec("lf search");
             card = parseLfSearch(stdout);
             if (card) {
-                spinner.succeed("Original card read");
+                s.stop("Original card read");
                 break;
             }
-            spinner.fail("No card detected.");
+            s.stop("No card detected.");
+            p.log.error("No card detected.");
         } catch (err) {
             if (err instanceof Pm3Error) {
-                spinner.fail(err.message);
+                s.stop(err.message);
+                p.log.error(err.message);
                 if (err.message.includes("not found")) {
                     printDoctorHint();
                 }
             } else {
-                spinner.fail("Read failed.");
+                s.stop("Read failed.");
+                p.log.error("Read failed.");
             }
         }
 
         if (attempt < MAX_READ_RETRIES) {
-            console.log(chalk.dim(`  Retrying in ${READ_RETRY_DELAY / 1000}s...`));
+            p.log.info(`Retrying in ${READ_RETRY_DELAY / 1000}s...`);
             await new Promise((r) => setTimeout(r, READ_RETRY_DELAY));
         }
     }
 
     if (!card) {
-        console.log(chalk.red("\nFailed to read original card after all attempts."));
+        p.log.error("Failed to read original card after all attempts.");
         return false;
     }
 
@@ -60,7 +63,7 @@ export async function clone(): Promise<boolean> {
     const success = await writeAndVerify(card);
 
     if (success) {
-        console.log(chalk.green("\nClone successful!\n"));
+        p.log.success("Clone successful!");
         const name = await promptName();
         if (name) {
             await saveFob({
@@ -70,10 +73,11 @@ export async function clone(): Promise<boolean> {
                 encoding: card.encoding,
                 savedAt: new Date().toISOString(),
             });
-            console.log(chalk.green(`Saved as "${name}".`));
+            p.log.success(`Saved as "${name}".`);
         }
+        p.outro("Done!");
         return true;
     }
-    console.log(chalk.red("\nClone failed.\n"));
+    p.log.error("Clone failed.");
     return false;
 }

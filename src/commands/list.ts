@@ -1,4 +1,4 @@
-import chalk from "chalk";
+import * as p from "@clack/prompts";
 import { loadFobs } from "../lib/store.js";
 
 export async function list(options: { json?: boolean } = {}): Promise<boolean> {
@@ -10,7 +10,7 @@ export async function list(options: { json?: boolean } = {}): Promise<boolean> {
     }
 
     if (fobs.length === 0) {
-        console.log(chalk.dim("\nNo saved fobs. Use `keyfabe read` or `keyfabe clone` to save one.\n"));
+        p.log.info("No saved fobs. Use `keyfabe read` or `keyfabe clone` to save one.");
         return true;
     }
 
@@ -23,15 +23,13 @@ export async function list(options: { json?: boolean } = {}): Promise<boolean> {
         encoding: hasEncoding ? Math.max(12, ...fobs.map((f) => (f.encoding ?? "").length + 2)) : 0,
     };
 
-    console.log();
-    let header =
-        chalk.bold("Name".padEnd(cols.name)) + chalk.bold("Type".padEnd(cols.type)) + chalk.bold("ID".padEnd(cols.id));
+    let header = "Name".padEnd(cols.name) + "Type".padEnd(cols.type) + "ID".padEnd(cols.id);
     if (hasEncoding) {
-        header += chalk.bold("Encoding".padEnd(cols.encoding));
+        header += "Encoding".padEnd(cols.encoding);
     }
-    header += chalk.bold("Saved");
-    console.log(header);
+    header += "Saved";
 
+    const rows: string[] = [];
     for (const fob of fobs) {
         const date = fob.savedAt.slice(0, 10);
         let row = fob.name.padEnd(cols.name) + fob.type.padEnd(cols.type) + fob.id.padEnd(cols.id);
@@ -39,8 +37,9 @@ export async function list(options: { json?: boolean } = {}): Promise<boolean> {
             row += (fob.encoding ?? "").padEnd(cols.encoding);
         }
         row += date;
-        console.log(row);
+        rows.push(row);
     }
-    console.log();
+
+    p.note(`${header}\n${rows.join("\n")}`, `Saved Fobs (${fobs.length})`);
     return true;
 }

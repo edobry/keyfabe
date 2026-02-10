@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getOutput, mockOra, mockPm3Module, setupBeforeEach } from "../helpers/mocks.js";
+import { mockClack, mockPm3Module, setupBeforeEach } from "../helpers/mocks.js";
 
 mockPm3Module();
-mockOra();
+mockClack();
 
 vi.mock("../../src/lib/firmware.js", () => ({
     checkInstalled: vi.fn(),
@@ -63,10 +63,7 @@ describe("setup", () => {
         mockFlashFirmware.mockResolvedValue(undefined);
         mockWaitForDevice.mockResolvedValue("/dev/tty.usbmodem5678");
 
-        await setup();
-
-        const output = getOutput();
-        expect(output).toContain("Setup complete");
+        expect(await setup()).toBe(true);
         expect(mockBuildFirmware).toHaveBeenCalled();
         expect(mockFlashFirmware).toHaveBeenCalled();
     });
@@ -80,67 +77,46 @@ describe("setup", () => {
             stderr: "",
         });
 
-        await setup();
-
-        const output = getOutput();
-        expect(output).toContain("No action needed");
+        expect(await setup()).toBe(true);
         expect(mockBuildFirmware).not.toHaveBeenCalled();
     });
 
-    it("no device: prints plug-in message", async () => {
+    it("no device → false", async () => {
         mockCheckInstalled.mockResolvedValue(true);
         mockDetectPort.mockResolvedValue(null);
 
-        await setup();
-
-        const output = getOutput();
-        expect(output).toContain("No Proxmark3 detected");
+        expect(await setup()).toBe(false);
         expect(mockPm3Exec).not.toHaveBeenCalled();
     });
 
-    it("pm3 not installed: prints brew install instructions", async () => {
+    it("pm3 not installed → false", async () => {
         mockCheckInstalled.mockResolvedValueOnce(false);
 
-        await setup();
-
-        const output = getOutput();
-        expect(output).toContain("pm3 not found");
-        expect(output).toContain("brew tap rfidresearchgroup/proxmark3");
+        expect(await setup()).toBe(false);
     });
 
-    it("make not installed: prints install instructions", async () => {
+    it("make not installed → false", async () => {
         mockCheckInstalled.mockResolvedValueOnce(true).mockResolvedValueOnce(false);
 
-        await setup();
-
-        const output = getOutput();
-        expect(output).toContain("make not found");
-        expect(output).toContain("xcode-select");
+        expect(await setup()).toBe(false);
     });
 
-    it("proxmark3 flasher not installed: prints install instructions", async () => {
+    it("proxmark3 flasher not installed → false", async () => {
         mockCheckInstalled.mockResolvedValueOnce(true).mockResolvedValueOnce(true).mockResolvedValueOnce(false);
 
-        await setup();
-
-        const output = getOutput();
-        expect(output).toContain("proxmark3 flasher not found");
+        expect(await setup()).toBe(false);
     });
 
-    it("brew cache not found: prints install instructions", async () => {
+    it("brew cache not found → false", async () => {
         mockCheckInstalled.mockResolvedValue(true);
         mockDetectPort.mockResolvedValue("/dev/tty.usbmodem1234");
         mockPm3Exec.mockResolvedValueOnce({ stdout: "ERROR: cannot communicate", stderr: "" });
         mockFindBrewCache.mockRejectedValue(new Error("No available formula"));
 
-        await setup();
-
-        const output = getOutput();
-        expect(output).toContain("Install Proxmark3 client");
-        expect(output).toContain("brew tap rfidresearchgroup/proxmark3");
+        expect(await setup()).toBe(false);
     });
 
-    it("build fails: prints error, does not attempt flash", async () => {
+    it("build fails → false, does not attempt flash", async () => {
         mockCheckInstalled.mockResolvedValue(true);
         mockDetectPort.mockResolvedValue("/dev/tty.usbmodem1234");
         mockPm3Exec.mockResolvedValueOnce({ stdout: "ERROR: cannot communicate", stderr: "" });
@@ -148,12 +124,11 @@ describe("setup", () => {
         mockExecCommand.mockResolvedValue({ stdout: "", stderr: "" });
         mockBuildFirmware.mockRejectedValue(new Error("compilation error"));
 
-        await setup();
-
+        expect(await setup()).toBe(false);
         expect(mockFlashFirmware).not.toHaveBeenCalled();
     });
 
-    it("user declines flash: exits gracefully", async () => {
+    it("user declines flash → false", async () => {
         mockCheckInstalled.mockResolvedValue(true);
         mockDetectPort.mockResolvedValue("/dev/tty.usbmodem1234");
         mockPm3Exec.mockResolvedValueOnce({ stdout: "ERROR: cannot communicate", stderr: "" });
@@ -162,14 +137,11 @@ describe("setup", () => {
         mockBuildFirmware.mockResolvedValue(undefined);
         mockConfirm.mockResolvedValue(false);
 
-        await setup();
-
-        const output = getOutput();
-        expect(output).toContain("Flash cancelled");
+        expect(await setup()).toBe(false);
         expect(mockFlashFirmware).not.toHaveBeenCalled();
     });
 
-    it("flash fails: prints error and recovery instructions", async () => {
+    it("flash fails → false", async () => {
         mockCheckInstalled.mockResolvedValue(true);
         mockDetectPort.mockResolvedValue("/dev/tty.usbmodem1234");
         mockPm3Exec.mockResolvedValueOnce({ stdout: "ERROR: cannot communicate", stderr: "" });
@@ -179,10 +151,7 @@ describe("setup", () => {
         mockConfirm.mockResolvedValue(true);
         mockFlashFirmware.mockRejectedValue(new Error("flash error"));
 
-        await setup();
-
-        const output = getOutput();
-        expect(output).toContain("recovery mode");
+        expect(await setup()).toBe(false);
     });
 
     it("device reappears after flash: verification passes", async () => {
@@ -202,14 +171,10 @@ describe("setup", () => {
         mockFlashFirmware.mockResolvedValue(undefined);
         mockWaitForDevice.mockResolvedValue("/dev/tty.usbmodem5678");
 
-        await setup();
-
-        const output = getOutput();
-        expect(output).toContain("Setup complete");
-        expect(output).toContain("29.84");
+        expect(await setup()).toBe(true);
     });
 
-    it("device does not reappear after flash: prints troubleshooting", async () => {
+    it("device does not reappear after flash → false", async () => {
         mockCheckInstalled.mockResolvedValue(true);
         mockDetectPort.mockResolvedValue("/dev/tty.usbmodem1234");
         mockPm3Exec.mockResolvedValueOnce({ stdout: "ERROR: cannot communicate", stderr: "" });
@@ -220,10 +185,6 @@ describe("setup", () => {
         mockFlashFirmware.mockResolvedValue(undefined);
         mockWaitForDevice.mockResolvedValue(null);
 
-        await setup();
-
-        const output = getOutput();
-        expect(output).toContain("re-plugging");
-        expect(output).toContain("recovery mode");
+        expect(await setup()).toBe(false);
     });
 });

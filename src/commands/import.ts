@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import chalk from "chalk";
+import * as p from "@clack/prompts";
 import type { Fob } from "../lib/store.js";
 import { importFobs } from "../lib/store.js";
 
@@ -21,7 +21,7 @@ export async function importFile(filePath: string): Promise<boolean> {
     try {
         raw = await readFile(filePath, "utf-8");
     } catch {
-        console.log(chalk.red(`\nCannot read file: ${filePath}\n`));
+        p.log.error(`Cannot read file: ${filePath}`);
         return false;
     }
 
@@ -29,18 +29,16 @@ export async function importFile(filePath: string): Promise<boolean> {
     try {
         data = JSON.parse(raw);
     } catch {
-        console.log(chalk.red("\nInvalid JSON.\n"));
+        p.log.error("Invalid JSON.");
         return false;
     }
 
     if (!validateFobs(data)) {
-        console.log(
-            chalk.red("\nInvalid format. Expected an array of fob objects with name, type, id, and savedAt.\n"),
-        );
+        p.log.error("Invalid format. Expected an array of fob objects with name, type, id, and savedAt.");
         return false;
     }
 
     const { added, updated } = await importFobs(data);
-    console.log(chalk.green(`\nImported ${added} new, updated ${updated} existing.\n`));
+    p.log.success(`Imported ${added} new, updated ${updated} existing.`);
     return true;
 }

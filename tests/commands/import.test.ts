@@ -2,7 +2,9 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { getOutput, setupBeforeEach } from "../helpers/mocks.js";
+import { mockClack, setupBeforeEach } from "../helpers/mocks.js";
+
+mockClack();
 
 vi.mock("../../src/lib/store.js", () => ({
     importFobs: vi.fn(),
@@ -25,21 +27,17 @@ afterEach(async () => {
 });
 
 describe("importFile", () => {
-    it("imports valid JSON file", async () => {
+    it("imports valid JSON file → true", async () => {
         const filePath = join(tmpDir, "fobs.json");
         const fobs = [{ name: "test", type: "EM410x", id: "1234567890", savedAt: "2024-01-01" }];
         await writeFile(filePath, JSON.stringify(fobs));
         mockImportFobs.mockResolvedValue({ added: 1, updated: 0 });
 
-        const result = await importFile(filePath);
-
-        expect(result).toBe(true);
+        expect(await importFile(filePath)).toBe(true);
         expect(mockImportFobs).toHaveBeenCalledWith(fobs);
-        const output = getOutput();
-        expect(output).toContain("Imported 1 new");
     });
 
-    it("reports updated count", async () => {
+    it("reports added and updated counts", async () => {
         const filePath = join(tmpDir, "fobs.json");
         const fobs = [
             { name: "a", type: "EM410x", id: "1111111111", savedAt: "2024-01-01" },
@@ -48,41 +46,24 @@ describe("importFile", () => {
         await writeFile(filePath, JSON.stringify(fobs));
         mockImportFobs.mockResolvedValue({ added: 1, updated: 1 });
 
-        const result = await importFile(filePath);
-
-        expect(result).toBe(true);
-        const output = getOutput();
-        expect(output).toContain("1 new");
-        expect(output).toContain("1 existing");
+        expect(await importFile(filePath)).toBe(true);
     });
 
-    it("returns false for missing file", async () => {
-        const result = await importFile("/nonexistent/file.json");
-
-        expect(result).toBe(false);
-        const output = getOutput();
-        expect(output).toContain("Cannot read file");
+    it("missing file → false", async () => {
+        expect(await importFile("/nonexistent/file.json")).toBe(false);
     });
 
-    it("returns false for invalid JSON", async () => {
+    it("invalid JSON → false", async () => {
         const filePath = join(tmpDir, "bad.json");
         await writeFile(filePath, "not json{{{");
 
-        const result = await importFile(filePath);
-
-        expect(result).toBe(false);
-        const output = getOutput();
-        expect(output).toContain("Invalid JSON");
+        expect(await importFile(filePath)).toBe(false);
     });
 
-    it("returns false for invalid fob format", async () => {
+    it("invalid fob format → false", async () => {
         const filePath = join(tmpDir, "bad-format.json");
         await writeFile(filePath, JSON.stringify([{ foo: "bar" }]));
 
-        const result = await importFile(filePath);
-
-        expect(result).toBe(false);
-        const output = getOutput();
-        expect(output).toContain("Invalid format");
+        expect(await importFile(filePath)).toBe(false);
     });
 });

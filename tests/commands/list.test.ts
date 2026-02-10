@@ -1,64 +1,59 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getOutput, setupBeforeEach } from "../helpers/mocks.js";
+import { getOutput, mockClack, setupBeforeEach } from "../helpers/mocks.js";
+
+mockClack();
 
 vi.mock("../../src/lib/store.js", () => ({
     loadFobs: vi.fn(),
 }));
 
+import * as p from "@clack/prompts";
 import { list } from "../../src/commands/list.js";
 import { loadFobs } from "../../src/lib/store.js";
 
 const mockLoadFobs = vi.mocked(loadFobs);
+const mockNote = vi.mocked(p.note);
 
 beforeEach(() => {
     setupBeforeEach();
 });
 
 describe("list", () => {
-    it("prints empty message when no fobs", async () => {
+    it("empty store → info message, no note", async () => {
         mockLoadFobs.mockResolvedValue([]);
 
-        const result = await list();
-
-        expect(result).toBe(true);
-        expect(console.log).toHaveBeenCalledWith(expect.stringContaining("No saved fobs"));
+        expect(await list()).toBe(true);
+        expect(mockNote).not.toHaveBeenCalled();
     });
 
-    it("prints formatted table when fobs exist", async () => {
+    it("fobs exist → displays table via p.note", async () => {
         mockLoadFobs.mockResolvedValue([
             { name: "front-door", type: "EM410x", id: "1A2B3C4D5E", savedAt: "2024-06-15T12:00:00.000Z" },
             { name: "garage", type: "HID Prox", id: "2004263F88", savedAt: "2024-06-16T12:00:00.000Z" },
         ]);
 
-        const result = await list();
-
-        expect(result).toBe(true);
-        const output = getOutput();
-        expect(output).toContain("front-door");
-        expect(output).toContain("garage");
-        expect(output).toContain("EM410x");
-        expect(output).toContain("HID Prox");
-        expect(output).toContain("2024-06-15");
+        expect(await list()).toBe(true);
+        expect(mockNote).toHaveBeenCalledWith(expect.stringContaining("front-door"), "Saved Fobs (2)");
+        const noteContent = mockNote.mock.calls[0][0] as string;
+        expect(noteContent).toContain("garage");
+        expect(noteContent).toContain("EM410x");
+        expect(noteContent).toContain("HID Prox");
+        expect(noteContent).toContain("2024-06-15");
     });
 
-    it("--json flag outputs valid JSON", async () => {
+    it("--json flag → outputs valid JSON to console.log", async () => {
         const fobs = [{ name: "front-door", type: "EM410x", id: "1A2B3C4D5E", savedAt: "2024-06-15T12:00:00.000Z" }];
         mockLoadFobs.mockResolvedValue(fobs);
 
-        const result = await list({ json: true });
-
-        expect(result).toBe(true);
+        expect(await list({ json: true })).toBe(true);
         const output = getOutput();
-        const parsed = JSON.parse(output);
-        expect(parsed).toEqual(fobs);
+        expect(JSON.parse(output)).toEqual(fobs);
     });
 
-    it("--json with empty store outputs empty array", async () => {
+    it("--json with empty store → empty array", async () => {
         mockLoadFobs.mockResolvedValue([]);
 
-        const result = await list({ json: true });
-
-        expect(result).toBe(true);
+        expect(await list({ json: true })).toBe(true);
         const output = getOutput();
         expect(JSON.parse(output)).toEqual([]);
     });
@@ -75,24 +70,19 @@ describe("list", () => {
             { name: "garage", type: "HID Prox", id: "2004263F88", savedAt: "2024-06-16T12:00:00.000Z" },
         ]);
 
-        const result = await list();
-
-        expect(result).toBe(true);
-        const output = getOutput();
-        expect(output).toContain("Encoding");
-        expect(output).toContain("RF/64");
+        expect(await list()).toBe(true);
+        const noteContent = mockNote.mock.calls[0][0] as string;
+        expect(noteContent).toContain("Encoding");
+        expect(noteContent).toContain("RF/64");
     });
 
     it("omits encoding column when no fobs have encoding", async () => {
         mockLoadFobs.mockResolvedValue([
             { name: "front-door", type: "EM410x", id: "1A2B3C4D5E", savedAt: "2024-06-15T12:00:00.000Z" },
-            { name: "garage", type: "HID Prox", id: "2004263F88", savedAt: "2024-06-16T12:00:00.000Z" },
         ]);
 
-        const result = await list();
-
-        expect(result).toBe(true);
-        const output = getOutput();
-        expect(output).not.toContain("Encoding");
+        expect(await list()).toBe(true);
+        const noteContent = mockNote.mock.calls[0][0] as string;
+        expect(noteContent).not.toContain("Encoding");
     });
 });

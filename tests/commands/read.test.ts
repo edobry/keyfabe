@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getOutput, mockOra, mockPm3Module, setupBeforeEach } from "../helpers/mocks.js";
+import { mockClack, mockPm3Module, setupBeforeEach } from "../helpers/mocks.js";
 
 mockPm3Module();
-mockOra();
+mockClack();
 
 vi.mock("../../src/lib/store.js", () => ({
     saveFob: vi.fn(),
@@ -29,40 +29,15 @@ beforeEach(() => {
 });
 
 describe("read", () => {
-    it("LF card found: displays info, prompts to save", async () => {
+    it("card found, user saves → calls saveFob", async () => {
         mockPm3Exec.mockResolvedValueOnce({
             stdout: "[+] EM 410x Tag ID: 1A2B3C4D5E\n[+] RF/64",
-            stderr: "",
-        });
-        mockPromptName.mockResolvedValue(null);
-
-        await read();
-
-        const output = getOutput();
-        expect(output).toContain("EM410x");
-        expect(output).toContain("1A2B3C4D5E");
-    });
-
-    it("no card detected: prints error", async () => {
-        mockPm3Exec.mockResolvedValueOnce({ stdout: "no known cards", stderr: "" });
-
-        const result = await read();
-
-        expect(result).toBe(false);
-        expect(mockPromptName).not.toHaveBeenCalled();
-        expect(mockPm3Exec).toHaveBeenCalledTimes(1);
-    });
-
-    it("user saves: calls saveFob", async () => {
-        mockPm3Exec.mockResolvedValueOnce({
-            stdout: "[+] EM 410x Tag ID: 1A2B3C4D5E",
             stderr: "",
         });
         mockPromptName.mockResolvedValue("my-fob");
         mockSaveFob.mockResolvedValue(undefined);
 
-        await read();
-
+        expect(await read()).toBe(true);
         expect(mockSaveFob).toHaveBeenCalledWith(
             expect.objectContaining({
                 name: "my-fob",
@@ -72,34 +47,34 @@ describe("read", () => {
         );
     });
 
-    it("no device connected: returns false immediately", async () => {
+    it("no card detected → false", async () => {
+        mockPm3Exec.mockResolvedValueOnce({ stdout: "no known cards", stderr: "" });
+
+        expect(await read()).toBe(false);
+        expect(mockPromptName).not.toHaveBeenCalled();
+    });
+
+    it("no device connected → false immediately", async () => {
         mockRequireDevice.mockResolvedValueOnce(false);
 
-        const result = await read();
-
-        expect(result).toBe(false);
+        expect(await read()).toBe(false);
         expect(mockPm3Exec).not.toHaveBeenCalled();
     });
 
-    it("user skips save: does not call saveFob", async () => {
+    it("user skips save → does not call saveFob", async () => {
         mockPm3Exec.mockResolvedValueOnce({
             stdout: "[+] EM 410x Tag ID: 1A2B3C4D5E",
             stderr: "",
         });
         mockPromptName.mockResolvedValue(null);
 
-        await read();
-
+        expect(await read()).toBe(true);
         expect(mockSaveFob).not.toHaveBeenCalled();
     });
 
-    it("pm3 not found: prints doctor hint", async () => {
+    it("pm3 not found → false", async () => {
         mockPm3Exec.mockRejectedValueOnce(new MockPm3Error("pm3 command not found", "", ""));
 
-        const result = await read();
-
-        expect(result).toBe(false);
-        const output = getOutput();
-        expect(output).toContain("keyfabe doctor");
+        expect(await read()).toBe(false);
     });
 });

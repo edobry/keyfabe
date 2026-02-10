@@ -24,9 +24,7 @@ describe("exportFobs", () => {
         ];
         mockLoadFobs.mockResolvedValue(fobs);
 
-        const result = await exportFobs();
-
-        expect(result).toBe(true);
+        expect(await exportFobs()).toBe(true);
         const written = (process.stdout.write as ReturnType<typeof vi.fn>).mock.calls[0][0];
         const parsed = JSON.parse(written);
         expect(parsed).toHaveLength(2);
@@ -36,9 +34,7 @@ describe("exportFobs", () => {
     it("returns false when no fobs", async () => {
         mockLoadFobs.mockResolvedValue([]);
 
-        const result = await exportFobs();
-
-        expect(result).toBe(false);
+        expect(await exportFobs()).toBe(false);
         expect(process.stdout.write).not.toHaveBeenCalled();
     });
 });
