@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import * as p from "@clack/prompts";
 import { program } from "commander";
 import { clone } from "./commands/clone.js";
 import { deleteFob } from "./commands/delete.js";
@@ -21,6 +22,51 @@ function withExitCode(fn: (...args: any[]) => Promise<boolean>) {
 
 program.name("keyfabe").description("CLI tool for Proxmark3 keyfob cloning").version("0.1.0");
 
+program.action(
+    withExitCode(async () => {
+        if (!process.stdout.isTTY) {
+            program.help();
+            return true;
+        }
+
+        p.intro("keyfabe");
+
+        const action = await p.select({
+            message: "What would you like to do?",
+            options: [
+                { value: "clone", label: "Clone a keyfob", hint: "read + write + verify" },
+                { value: "read", label: "Read a card", hint: "identify a fob" },
+                { value: "write", label: "Write a saved identity", hint: "write to blank fob" },
+                { value: "list", label: "List saved fobs" },
+                { value: "doctor", label: "Health check", hint: "diagnose device" },
+                { value: "setup", label: "Firmware setup", hint: "flash Iceman firmware" },
+            ],
+        });
+
+        if (p.isCancel(action)) {
+            p.cancel("Goodbye!");
+            return true;
+        }
+
+        switch (action) {
+            case "clone":
+                return clone();
+            case "read":
+                return read();
+            case "write":
+                return write();
+            case "list":
+                return list();
+            case "doctor":
+                return doctor();
+            case "setup":
+                return setup();
+            default:
+                return true;
+        }
+    }),
+);
+
 program
     .command("doctor")
     .description("Check device connection, firmware, and antenna health")
@@ -33,7 +79,7 @@ program.command("clone").description("Interactive guided clone flow (read + writ
 program
     .command("write")
     .description("Write a previously-saved identity to a blank fob")
-    .argument("<name>", "name of the saved fob identity")
+    .argument("[name]", "name of the saved fob identity")
     .action(withExitCode(write));
 
 program
@@ -45,20 +91,20 @@ program
 program
     .command("show")
     .description("Show details of a saved fob identity")
-    .argument("<name>", "name of the saved fob identity")
+    .argument("[name]", "name of the saved fob identity")
     .action(withExitCode(show));
 
 program
     .command("rename")
     .description("Rename a saved fob identity")
-    .argument("<old-name>", "current name")
-    .argument("<new-name>", "new name")
+    .argument("[old-name]", "current name")
+    .argument("[new-name]", "new name")
     .action(withExitCode(rename));
 
 program
     .command("delete")
     .description("Delete a saved fob identity")
-    .argument("<name>", "name of the saved fob identity")
+    .argument("[name]", "name of the saved fob identity")
     .action(withExitCode(deleteFob));
 
 program.command("export").description("Export all saved fob identities as JSON").action(withExitCode(exportFobs));
