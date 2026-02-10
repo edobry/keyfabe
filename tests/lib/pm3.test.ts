@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("@clack/prompts", () => ({
+    log: {
+        error: vi.fn((...args: any[]) => console.log(...args)),
+    },
+}));
+
 vi.mock("node:child_process", () => ({
     execFile: vi.fn(),
 }));
@@ -16,7 +22,7 @@ const mockExecFile = vi.mocked(execFile);
 const mockReaddir = vi.mocked(readdir);
 
 beforeEach(() => {
-    vi.resetAllMocks();
+    vi.clearAllMocks();
     vi.spyOn(console, "log").mockImplementation(() => {});
 });
 
@@ -111,6 +117,7 @@ describe("requireDevice", () => {
 
         const result = await requireDevice();
         expect(result).toBe(false);
-        expect(console.log).toHaveBeenCalledWith(expect.stringContaining("No Proxmark3 detected"));
+        const output = (console.log as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0]).join("\n");
+        expect(output).toContain("No Proxmark3 detected");
     });
 });

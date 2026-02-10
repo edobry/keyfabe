@@ -33,6 +33,13 @@ Use the type that best describes the change. Only `feat` and `fix` trigger npm r
 - Tests live in `tests/` mirroring `src/` structure. Use shared helpers from `tests/helpers/mocks.ts`.
 - All commands return `Promise<boolean>` and are wrapped with `withExitCode` in `src/index.ts`.
 
+## Testing Philosophy
+
+- **Behavioral over output**: Prefer asserting on return values, function calls, and state mutations — not on display strings. If `expect(result).toBe(false)` already proves the error path ran, don't also assert on the error message text.
+- **Mock UI minimally**: `@clack/prompts` is mocked as quiet no-ops via `mockClack()`. Interactive prompts (select/text/confirm) must be mocked since they block on user input. Display functions (log, note, spinner, intro/outro) are silenced — don't pipe them through `console.log`.
+- **Assert on mock calls for display-focused tests**: When display IS the feature (e.g., `list` table output, `show` fob details), assert directly on clack mock function calls (`expect(p.note).toHaveBeenCalledWith(...)`) rather than capturing console output.
+- **No `getOutput()` for command tests**: The `getOutput()` console.log capture pattern is only for tests that genuinely need raw stdout (e.g., `--json` output). Command tests should not rely on it for clack output assertions.
+
 ## Code Style
 
 - Biome handles formatting and linting (see `biome.json`). Run `npx biome check --write` to auto-fix.

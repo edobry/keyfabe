@@ -1,30 +1,40 @@
-import { stdin, stdout } from "node:process";
-import { createInterface } from "node:readline/promises";
+import * as p from "@clack/prompts";
+import type { Fob } from "./store.js";
 
-function createRl() {
-    return createInterface({ input: stdin, output: stdout });
-}
-
-export async function prompt(message: string): Promise<string> {
-    const rl = createRl();
-    try {
-        return await rl.question(message);
-    } finally {
-        rl.close();
+function handleCancel(value: unknown): asserts value is string | boolean {
+    if (p.isCancel(value)) {
+        p.cancel("Operation cancelled.");
+        process.exit(0);
     }
 }
 
 export async function confirm(message: string): Promise<boolean> {
-    const answer = await prompt(`${message} [y/N] `);
-    return answer.toLowerCase().startsWith("y");
+    const value = await p.confirm({ message });
+    handleCancel(value);
+    return value as boolean;
 }
 
 export async function waitForEnter(message: string): Promise<void> {
-    await prompt(`${message} [Press Enter] `);
+    const value = await p.text({ message, placeholder: "Press Enter", defaultValue: "" });
+    handleCancel(value);
 }
 
 export async function promptName(): Promise<string | null> {
-    const name = await prompt("Save as (name, or empty to skip): ");
-    const trimmed = name.trim();
+    const value = await p.text({ message: "Save as", placeholder: "name, or Enter to skip", defaultValue: "" });
+    handleCancel(value);
+    const trimmed = (value as string).trim();
     return trimmed || null;
+}
+
+export async function selectFob(fobs: Fob[], message = "Select a fob"): Promise<string> {
+    const value = await p.select({
+        message,
+        options: fobs.map((f) => ({
+            value: f.name,
+            label: f.name,
+            hint: `${f.type} ${f.id}`,
+        })),
+    });
+    handleCancel(value);
+    return value as string;
 }

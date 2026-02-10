@@ -23,31 +23,48 @@ export function mockPm3Module() {
 }
 
 /**
- * Mock factory for ora — all spinner methods are no-ops that return `this`.
+ * Mock factory for @clack/prompts — quiet no-ops.
+ * Interactive prompts (select/text/confirm) are vi.fn() stubs that tests
+ * configure with mockResolvedValue. Display functions are silenced.
  */
-export function mockOra() {
-    vi.mock("ora", () => ({
-        default: () => ({
-            start: vi.fn().mockReturnThis(),
-            succeed: vi.fn().mockReturnThis(),
-            fail: vi.fn().mockReturnThis(),
-            warn: vi.fn().mockReturnThis(),
-            text: "",
+export function mockClack() {
+    vi.mock("@clack/prompts", () => ({
+        intro: vi.fn(),
+        outro: vi.fn(),
+        cancel: vi.fn(),
+        isCancel: vi.fn().mockReturnValue(false),
+        spinner: vi.fn().mockReturnValue({
+            start: vi.fn(),
+            stop: vi.fn(),
+            error: vi.fn(),
+            message: vi.fn(),
         }),
+        text: vi.fn(),
+        confirm: vi.fn(),
+        select: vi.fn(),
+        note: vi.fn(),
+        log: {
+            info: vi.fn(),
+            warn: vi.fn(),
+            error: vi.fn(),
+            success: vi.fn(),
+            step: vi.fn(),
+            message: vi.fn(),
+        },
     }));
 }
 
 /**
- * Standard beforeEach: reset mocks + silence console.log.
- * Call this inside your beforeEach or at module level.
+ * Standard beforeEach: clear mock call history + silence console.log.
  */
 export function setupBeforeEach() {
-    vi.resetAllMocks();
+    vi.clearAllMocks();
     vi.spyOn(console, "log").mockImplementation(() => {});
 }
 
 /**
  * Collect everything printed via console.log into a single string.
+ * Use only for tests that need raw stdout (e.g., --json output).
  */
 export function getOutput(): string {
     return (console.log as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0]).join("\n");
