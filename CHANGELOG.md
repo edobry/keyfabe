@@ -1,3 +1,10 @@
+# [0.2.0](https://github.com/edobry/keyfabe/compare/v0.1.2...v0.2.0) (2026-02-10)
+
+
+### Features
+
+* add doctor diagnostics, first-run hints, and list improvements ([e1e7353](https://github.com/edobry/keyfabe/commit/e1e7353ed65d4e4aabfb98ca5fd8f24838cc5b9c))
+
 ## [0.1.2](https://github.com/edobry/keyfabe/compare/v0.1.1...v0.1.2) (2026-02-10)
 
 
