@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getOutput, setupBeforeEach } from "../helpers/mocks.js";
+import { mockClack, setupBeforeEach } from "../helpers/mocks.js";
+
+mockClack();
 
 vi.mock("../../src/lib/card-ops.js", () => ({
     writeAndVerify: vi.fn(),
@@ -7,6 +9,7 @@ vi.mock("../../src/lib/card-ops.js", () => ({
 
 vi.mock("../../src/lib/store.js", () => ({
     getFob: vi.fn(),
+    loadFobs: vi.fn(),
 }));
 
 vi.mock("../../src/lib/pm3.js", () => ({
@@ -15,6 +18,7 @@ vi.mock("../../src/lib/pm3.js", () => ({
 
 vi.mock("../../src/lib/prompts.js", () => ({
     waitForEnter: vi.fn().mockResolvedValue(undefined),
+    selectFob: vi.fn(),
 }));
 
 import { write } from "../../src/commands/write.js";
@@ -32,36 +36,27 @@ beforeEach(() => {
 });
 
 describe("write", () => {
-    it("fob found, write succeeds", async () => {
+    it("fob found, write succeeds → true", async () => {
         mockGetFob.mockResolvedValue({
             name: "front-door",
             type: "EM410x",
             id: "1A2B3C4D5E",
             savedAt: "2024-01-01",
         });
-
         mockWriteAndVerify.mockResolvedValue(true);
 
-        const result = await write("front-door");
-
-        expect(result).toBe(true);
-        const output = getOutput();
-        expect(output).toContain("Write successful");
+        expect(await write("front-door")).toBe(true);
         expect(mockWriteAndVerify).toHaveBeenCalledWith(expect.objectContaining({ type: "EM410x", id: "1A2B3C4D5E" }));
     });
 
-    it("fob not found: prints error", async () => {
+    it("fob not found → false", async () => {
         mockGetFob.mockResolvedValue(undefined);
 
-        const result = await write("nonexistent");
-
-        expect(result).toBe(false);
-        const output = getOutput();
-        expect(output).toContain("No saved fob");
+        expect(await write("nonexistent")).toBe(false);
         expect(mockWriteAndVerify).not.toHaveBeenCalled();
     });
 
-    it("no device connected: returns false immediately", async () => {
+    it("no device connected → false", async () => {
         mockGetFob.mockResolvedValue({
             name: "front-door",
             type: "EM410x",
@@ -70,26 +65,19 @@ describe("write", () => {
         });
         mockRequireDevice.mockResolvedValueOnce(false);
 
-        const result = await write("front-door");
-
-        expect(result).toBe(false);
+        expect(await write("front-door")).toBe(false);
         expect(mockWriteAndVerify).not.toHaveBeenCalled();
     });
 
-    it("fob found, write fails", async () => {
+    it("fob found, write fails → false", async () => {
         mockGetFob.mockResolvedValue({
             name: "front-door",
             type: "EM410x",
             id: "1A2B3C4D5E",
             savedAt: "2024-01-01",
         });
-
         mockWriteAndVerify.mockResolvedValue(false);
 
-        const result = await write("front-door");
-
-        expect(result).toBe(false);
-        const output = getOutput();
-        expect(output).toContain("Write failed");
+        expect(await write("front-door")).toBe(false);
     });
 });

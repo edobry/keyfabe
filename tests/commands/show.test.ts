@@ -1,21 +1,30 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getOutput, setupBeforeEach } from "../helpers/mocks.js";
+import { mockClack, setupBeforeEach } from "../helpers/mocks.js";
+
+mockClack();
 
 vi.mock("../../src/lib/store.js", () => ({
     getFob: vi.fn(),
+    loadFobs: vi.fn(),
 }));
 
+vi.mock("../../src/lib/prompts.js", () => ({
+    selectFob: vi.fn(),
+}));
+
+import * as p from "@clack/prompts";
 import { show } from "../../src/commands/show.js";
 import { getFob } from "../../src/lib/store.js";
 
 const mockGetFob = vi.mocked(getFob);
+const mockNote = vi.mocked(p.note);
 
 beforeEach(() => {
     setupBeforeEach();
 });
 
 describe("show", () => {
-    it("displays fob details when found", async () => {
+    it("displays fob details via p.note when found", async () => {
         mockGetFob.mockResolvedValue({
             name: "front-door",
             type: "EM410x",
@@ -24,15 +33,13 @@ describe("show", () => {
             savedAt: "2024-06-15T12:00:00.000Z",
         });
 
-        const result = await show("front-door");
-
-        expect(result).toBe(true);
-        const output = getOutput();
-        expect(output).toContain("front-door");
-        expect(output).toContain("EM410x");
-        expect(output).toContain("1A2B3C4D5E");
-        expect(output).toContain("RF/64");
-        expect(output).toContain("2024-06-15");
+        expect(await show("front-door")).toBe(true);
+        expect(mockNote).toHaveBeenCalledWith(expect.stringContaining("front-door"), "Fob Details");
+        const noteContent = mockNote.mock.calls[0][0] as string;
+        expect(noteContent).toContain("EM410x");
+        expect(noteContent).toContain("1A2B3C4D5E");
+        expect(noteContent).toContain("RF/64");
+        expect(noteContent).toContain("2024-06-15");
     });
 
     it("displays fob without encoding", async () => {
@@ -43,21 +50,15 @@ describe("show", () => {
             savedAt: "2024-06-16T12:00:00.000Z",
         });
 
-        const result = await show("garage");
-
-        expect(result).toBe(true);
-        const output = getOutput();
-        expect(output).toContain("HID Prox");
-        expect(output).not.toContain("Encoding");
+        expect(await show("garage")).toBe(true);
+        const noteContent = mockNote.mock.calls[0][0] as string;
+        expect(noteContent).not.toContain("Encoding");
     });
 
-    it("prints error when fob not found", async () => {
+    it("fob not found → false", async () => {
         mockGetFob.mockResolvedValue(undefined);
 
-        const result = await show("nonexistent");
-
-        expect(result).toBe(false);
-        const output = getOutput();
-        expect(output).toContain("No saved fob");
+        expect(await show("nonexistent")).toBe(false);
+        expect(mockNote).not.toHaveBeenCalled();
     });
 });

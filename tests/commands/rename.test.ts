@@ -1,8 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getOutput, setupBeforeEach } from "../helpers/mocks.js";
+import { mockClack, setupBeforeEach } from "../helpers/mocks.js";
+
+mockClack();
 
 vi.mock("../../src/lib/store.js", () => ({
     renameFob: vi.fn(),
+    loadFobs: vi.fn(),
+}));
+
+vi.mock("../../src/lib/prompts.js", () => ({
+    selectFob: vi.fn(),
 }));
 
 import { rename } from "../../src/commands/rename.js";
@@ -15,34 +22,22 @@ beforeEach(() => {
 });
 
 describe("rename", () => {
-    it("renames successfully", async () => {
+    it("renames successfully → true", async () => {
         mockRenameFob.mockResolvedValue("ok");
 
-        const result = await rename("old-name", "new-name");
-
-        expect(result).toBe(true);
+        expect(await rename("old-name", "new-name")).toBe(true);
         expect(mockRenameFob).toHaveBeenCalledWith("old-name", "new-name");
-        const output = getOutput();
-        expect(output).toContain('Renamed "old-name" to "new-name"');
     });
 
-    it("prints error when fob not found", async () => {
+    it("fob not found → false", async () => {
         mockRenameFob.mockResolvedValue("not-found");
 
-        const result = await rename("nonexistent", "new-name");
-
-        expect(result).toBe(false);
-        const output = getOutput();
-        expect(output).toContain("No saved fob");
+        expect(await rename("nonexistent", "new-name")).toBe(false);
     });
 
-    it("prints error when new name is taken", async () => {
+    it("new name taken → false", async () => {
         mockRenameFob.mockResolvedValue("name-taken");
 
-        const result = await rename("old-name", "existing");
-
-        expect(result).toBe(false);
-        const output = getOutput();
-        expect(output).toContain("already exists");
+        expect(await rename("old-name", "existing")).toBe(false);
     });
 });

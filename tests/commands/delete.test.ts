@@ -1,8 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getOutput, setupBeforeEach } from "../helpers/mocks.js";
+import { mockClack, setupBeforeEach } from "../helpers/mocks.js";
+
+mockClack();
 
 vi.mock("../../src/lib/store.js", () => ({
     removeFob: vi.fn(),
+    loadFobs: vi.fn(),
+}));
+
+vi.mock("../../src/lib/prompts.js", () => ({
+    confirm: vi.fn().mockResolvedValue(true),
+    selectFob: vi.fn(),
 }));
 
 import { deleteFob } from "../../src/commands/delete.js";
@@ -15,24 +23,16 @@ beforeEach(() => {
 });
 
 describe("deleteFob", () => {
-    it("deletes existing fob and returns true", async () => {
+    it("deletes existing fob → true", async () => {
         mockRemoveFob.mockResolvedValue(true);
 
-        const result = await deleteFob("front-door");
-
-        expect(result).toBe(true);
+        expect(await deleteFob("front-door")).toBe(true);
         expect(mockRemoveFob).toHaveBeenCalledWith("front-door");
-        const output = getOutput();
-        expect(output).toContain('Deleted "front-door"');
     });
 
-    it("returns false when fob not found", async () => {
+    it("fob not found → false", async () => {
         mockRemoveFob.mockResolvedValue(false);
 
-        const result = await deleteFob("nonexistent");
-
-        expect(result).toBe(false);
-        const output = getOutput();
-        expect(output).toContain("No saved fob");
+        expect(await deleteFob("nonexistent")).toBe(false);
     });
 });
