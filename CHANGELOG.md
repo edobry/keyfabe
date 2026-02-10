@@ -1,3 +1,10 @@
+## [0.1.2](https://github.com/edobry/keyfabe/compare/v0.1.1...v0.1.2) (2026-02-10)
+
+
+### Bug Fixes
+
+* check for device before running pm3 commands ([f968594](https://github.com/edobry/keyfabe/commit/f96859452862e8f4d314853eb3dfebd668878bd8))
+
 ## [0.1.1](https://github.com/edobry/keyfabe/compare/v0.1.0...v0.1.1) (2026-02-10)
 
 
