@@ -2,6 +2,10 @@
 
 A TypeScript CLI tool that wraps the Proxmark3 client to provide an ergonomic keyfob cloning workflow.
 
+<p align="center">
+  <img src="demo.gif" alt="keyfabe demo" width="800" />
+</p>
+
 ## What it does
 
 - Automates the multi-step read/detect/clone/verify process into a single guided flow
