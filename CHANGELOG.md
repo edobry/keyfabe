@@ -1,3 +1,11 @@
+# [0.3.0](https://github.com/edobry/keyfabe/compare/v0.2.0...v0.3.0) (2026-02-10)
+
+
+### Features
+
+* add default interactive wizard menu ([c3118d0](https://github.com/edobry/keyfabe/commit/c3118d01c94e751cc55efc4263d01e5d3ca2d53e))
+* add interactive fob selection for write/show/delete/rename ([8ed9eac](https://github.com/edobry/keyfabe/commit/8ed9eac5651142ebc81be992c1820caacf6559cd))
+
 # [0.2.0](https://github.com/edobry/keyfabe/compare/v0.1.2...v0.2.0) (2026-02-10)
 
 
