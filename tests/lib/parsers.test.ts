@@ -283,6 +283,14 @@ describe("parseMagicType", () => {
         expect(parseMagicType("[+] CUID card detected")).toBe("Gen2/CUID");
     });
 
+    it("detects bricked card from anticollision failure", () => {
+        expect(parseMagicType("[!] Card doesn't support standard iso14443-3 anticollision")).toBe("bricked");
+    });
+
+    it("detects bricked card from can't select", () => {
+        expect(parseMagicType("[!] can't select card")).toBe("bricked");
+    });
+
     it("returns unknown for unrecognized output", () => {
         expect(parseMagicType("[+] Valid ISO 14443-A tag found")).toBe("unknown");
     });

@@ -28,6 +28,7 @@ export const WriteTarget = {
 export const MagicCardType = {
     GEN1A: "Gen1A",
     GEN2_CUID: "Gen2/CUID",
+    BRICKED: "bricked",
     UNKNOWN: "unknown",
 } as const;
 
