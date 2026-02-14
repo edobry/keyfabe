@@ -1,3 +1,10 @@
+## [0.5.2](https://github.com/edobry/keyfabe/compare/v0.5.1...v0.5.2) (2026-02-14)
+
+
+### Bug Fixes
+
+* recognize hf mf csetuid success output and guide users on magic cards ([beb041a](https://github.com/edobry/keyfabe/commit/beb041a5af0e8ea88ebeebd6e5d5feae060f14df))
+
 ## [0.5.1](https://github.com/edobry/keyfabe/compare/v0.5.0...v0.5.1) (2026-02-14)
 
 
