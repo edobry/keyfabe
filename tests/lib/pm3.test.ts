@@ -36,26 +36,30 @@ describe("Pm3Command", () => {
         expect(cmd.toString()).toBe("hf mf csetuid");
     });
 
+    it("builds hierarchy with sub()", () => {
+        const lf = new Pm3Command("lf");
+        const em410x = lf.sub("em").sub("410x");
+        expect(em410x.sub("reader").toString()).toBe("lf em 410x reader");
+        expect(em410x.sub("clone").toString()).toBe("lf em 410x clone");
+    });
+
+    it("is immutable — sub and arg return new instances", () => {
+        const lf = new Pm3Command("lf");
+        const search = lf.sub("search");
+        const withFlag = search.arg("--verbose");
+        expect(lf.toString()).toBe("lf");
+        expect(search.toString()).toBe("lf search");
+        expect(withFlag.toString()).toBe("lf search --verbose");
+    });
+
     it("builds with arg flag and value", () => {
-        const base = new Pm3Command("lf", "em", "410x", "clone");
+        const base = new Pm3Command("lf").sub("em").sub("410x").sub("clone");
         const withArg = base.arg("--id", "1A2B3C4D5E");
         expect(withArg.toString()).toBe("lf em 410x clone --id 1A2B3C4D5E");
     });
 
-    it("builds with flag-only arg", () => {
-        const cmd = new Pm3Command("hf", "search").arg("--verbose");
-        expect(cmd.toString()).toBe("hf search --verbose");
-    });
-
-    it("is immutable — arg returns a new instance", () => {
-        const base = new Pm3Command("lf", "search");
-        const extended = base.arg("--verbose");
-        expect(base.toString()).toBe("lf search");
-        expect(extended.toString()).toBe("lf search --verbose");
-    });
-
     it("chains multiple args", () => {
-        const cmd = new Pm3Command("hf", "mf", "csetuid").arg("-u", "DEADBEEF").arg("--verbose");
+        const cmd = new Pm3Command("hf").sub("mf").sub("csetuid").arg("-u", "DEADBEEF").arg("--verbose");
         expect(cmd.toString()).toBe("hf mf csetuid -u DEADBEEF --verbose");
     });
 });

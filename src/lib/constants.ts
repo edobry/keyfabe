@@ -32,6 +32,12 @@ export class Pm3Command {
         this.parts = parts;
     }
 
+    /** Extend this command path with a subcommand. */
+    sub(name: string): Pm3Command {
+        return new Pm3Command(...this.parts, name);
+    }
+
+    /** Append a flag (and optional value) as runtime arguments. */
     arg(flag: string, value?: string): Pm3Command {
         return value !== undefined ? new Pm3Command(...this.parts, flag, value) : new Pm3Command(...this.parts, flag);
     }
@@ -41,15 +47,24 @@ export class Pm3Command {
     }
 }
 
+// Shared command path segments — each string appears exactly once
+const lf = new Pm3Command("lf");
+const hf = new Pm3Command("hf");
+const hw = new Pm3Command("hw");
+
+const em410x = lf.sub("em").sub("410x");
+const hid = lf.sub("hid");
+const mf = hf.sub("mf");
+
 export const Pm3Cmd = {
-    LF_SEARCH: new Pm3Command("lf", "search"),
-    HF_SEARCH: new Pm3Command("hf", "search"),
-    LF_T55XX_DETECT: new Pm3Command("lf", "t55xx", "detect"),
-    LF_EM_410X_READER: new Pm3Command("lf", "em", "410x", "reader"),
-    LF_EM_410X_CLONE: new Pm3Command("lf", "em", "410x", "clone"),
-    LF_HID_READER: new Pm3Command("lf", "hid", "reader"),
-    LF_HID_CLONE: new Pm3Command("lf", "hid", "clone"),
-    HF_MF_CSETUID: new Pm3Command("hf", "mf", "csetuid"),
-    HW_STATUS: new Pm3Command("hw", "status"),
-    HW_TUNE: new Pm3Command("hw", "tune"),
+    LF_SEARCH: lf.sub("search"),
+    HF_SEARCH: hf.sub("search"),
+    LF_T55XX_DETECT: lf.sub("t55xx").sub("detect"),
+    LF_EM_410X_READER: em410x.sub("reader"),
+    LF_EM_410X_CLONE: em410x.sub("clone"),
+    LF_HID_READER: hid.sub("reader"),
+    LF_HID_CLONE: hid.sub("clone"),
+    HF_MF_CSETUID: mf.sub("csetuid"),
+    HW_STATUS: hw.sub("status"),
+    HW_TUNE: hw.sub("tune"),
 } as const;
