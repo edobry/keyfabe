@@ -14,6 +14,43 @@ This document captures protocol-level knowledge about writable MIFARE Classic "m
 
 **How to identify**: Run `hf search` — the pm3 output includes a line like `Magic capabilities... Gen 2 / CUID` or `Magic capabilities... Gen 1a`.
 
+## Buying Magic Cards
+
+Regular MIFARE Classic cards have their UID burned in at the factory and permanently locked at the silicon level. No software can override this — it's physically fused by NXP (the chip manufacturer). Magic cards are clones made by third-party manufacturers with writable block 0, purpose-built for UID cloning.
+
+### What to Look For
+
+**Must-haves:**
+- **"UID changeable"** or **"UID writable"** — the key phrase that distinguishes magic cards from regular ones. Without this, you're buying a normal card.
+- **Correct chip type** — must match what you're cloning:
+  - MIFARE Classic 1K for most access cards/fobs
+  - MIFARE Classic 4K if the original is 4K
+- **4-byte UID** — some cards offer 7-byte UIDs, which won't match a 4-byte original. Most access systems use 4-byte UIDs.
+- **13.56 MHz / ISO 14443A** — the HF protocol. All MIFARE Classic cards use this.
+
+**Red flags (wrong product):**
+- **"MIFARE Ultralight"**, **"NTAG"**, or **"DESFire"** — different chip types entirely, won't work for Classic cloning
+- **"125 kHz"** — LF frequency, completely wrong (those are for EM410x/HID Prox cloning, which uses T55x7 cards instead)
+- **"Read-only"** or no mention of UID changeable — probably a regular card
+
+**Good to know:**
+- Gen1A and Gen2/CUID are both fine — keyfabe supports both automatically
+- Cards come in various form factors (ISO card, fob, sticker, wristband) — pick whatever matches your use case
+- Available on Amazon, AliExpress, etc. for a few dollars each. Search "MIFARE Classic 1K UID changeable" or "magic MIFARE card".
+- OBO HANDS is a commonly available brand with compatible cards
+
+### Example Compatible Product Specs
+
+A product listing with these specs will work:
+```
+Frequency:    13.56 MHz
+Protocol:     ISO/IEC 14443A
+Chip:         MIFARE Classic 1K compatible
+UID:          4-byte, changeable/writable
+Memory:       1K byte, 16 sectors × 4 blocks
+Rewrite:      100,000+ cycles
+```
+
 ## Block 0 Format (4-byte UID MIFARE Classic)
 
 Block 0 is the manufacturer block. On genuine cards it's read-only; on magic cards it's writable.
