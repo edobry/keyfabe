@@ -10,7 +10,7 @@ import { saveFob } from "../lib/store.js";
 const MAX_READ_RETRIES = 3;
 const READ_RETRY_DELAY = 2000;
 
-export async function clone(): Promise<boolean> {
+export async function clone(options?: { saveAs?: string }): Promise<boolean> {
     if (!(await requireDevice())) return false;
 
     p.intro("Clone Tag");
@@ -65,7 +65,7 @@ export async function clone(): Promise<boolean> {
 
     if (success) {
         p.log.success("Clone successful!");
-        const name = await promptName();
+        const name = options?.saveAs ?? (await promptName());
         if (name) {
             await saveFob({
                 name,

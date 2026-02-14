@@ -52,10 +52,10 @@ keyfabe doctor
 keyfabe setup
 
 # guided interactive clone flow (read original → write to blank)
-keyfabe clone
+keyfabe clone [--save-as <name>]
 
 # read and identify a tag without cloning
-keyfabe read
+keyfabe read [--save-as <name>]
 
 # write a previously-saved identity to a blank tag
 keyfabe write [name]
@@ -87,6 +87,39 @@ keyfabe repair
 
 Commands that take `[name]` arguments are fully optional — when omitted, you'll get an interactive tag picker.
 
+### Scripting / Non-Interactive Mode
+
+keyfabe auto-detects non-interactive mode when stdin is not a TTY (e.g., piped input, cron jobs, called from another process). No flags needed — interactive prompts are automatically skipped or replaced with sensible defaults:
+
+- **Pause prompts** (`waitForEnter`) — logged and skipped (scripted callers handle card placement themselves)
+- **Save prompts** (`promptName`) — skipped (use `--save-as` to save)
+- **Confirmation prompts** — auto-yes (you explicitly invoked the command)
+- **Selection prompts** — exit with error (provide the name as a CLI argument instead)
+
+```sh
+# read a tag and save it non-interactively
+keyfabe read --save-as front-door < /dev/null
+
+# clone and save in one shot
+keyfabe clone --save-as lobby-key < /dev/null
+
+# write a saved identity (already non-interactive with name arg)
+keyfabe write front-door < /dev/null
+
+# verify a tag against a saved identity
+keyfabe verify front-door < /dev/null
+
+# export/import work without changes
+keyfabe export > backup.json
+keyfabe import backup.json
+
+# list and show work without changes
+keyfabe list --json
+keyfabe show front-door
+```
+
+Commands that require interactive selection (e.g., `keyfabe delete` without a name argument) will exit with a clear error message when run non-interactively.
+
 ## Commands
 
 ### `keyfabe doctor`
@@ -99,11 +132,11 @@ Interactive wizard for flashing Iceman firmware to a stock Proxmark3 Easy. Handl
 
 ### `keyfabe clone`
 
-Guided clone flow: reads the original tag (LF and HF), writes the ID to a blank card, and verifies the readback. Optionally saves the identity for later use.
+Guided clone flow: reads the original tag (LF and HF), writes the ID to a blank card, and verifies the readback. Optionally saves the identity for later use. Use `--save-as <name>` to save without prompting.
 
 ### `keyfabe read`
 
-Reads and identifies whatever tag is on the antenna. Searches LF first, then falls back to HF. Supports EM410x, HID Prox, MIFARE Classic, MIFARE Ultralight, MIFARE DESFire, and ISO 14443-A. Optionally saves the identity.
+Reads and identifies whatever tag is on the antenna. Searches LF first, then falls back to HF. Supports EM410x, HID Prox, MIFARE Classic, MIFARE Ultralight, MIFARE DESFire, and ISO 14443-A. Optionally saves the identity. Use `--save-as <name>` to save without prompting.
 
 ### `keyfabe write [name]`
 
@@ -195,5 +228,5 @@ src/
     constants.ts        # shared card type and pm3 command constants
     card-ops.ts         # search, write-and-verify logic shared by commands
     display.ts          # shared display helpers and constants
-    prompts.ts          # interactive user prompts
+    prompts.ts          # interactive user prompts (auto-detects non-interactive mode)
 ```

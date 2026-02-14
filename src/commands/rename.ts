@@ -1,14 +1,7 @@
 import * as p from "@clack/prompts";
 import { printFobNotFound, printNoSavedTags } from "../lib/display.js";
-import { selectFob } from "../lib/prompts.js";
+import { promptText, selectFob } from "../lib/prompts.js";
 import { loadFobs, renameFob } from "../lib/store.js";
-
-function handleCancel(value: unknown): asserts value is string {
-    if (p.isCancel(value)) {
-        p.cancel("Operation cancelled.");
-        process.exit(0);
-    }
-}
 
 export async function rename(oldName?: string, newName?: string): Promise<boolean> {
     if (!oldName) {
@@ -21,9 +14,7 @@ export async function rename(oldName?: string, newName?: string): Promise<boolea
     }
 
     if (!newName) {
-        const value = await p.text({ message: "New name", placeholder: "e.g. front-door" });
-        handleCancel(value);
-        newName = value as string;
+        newName = await promptText("New name", "e.g. front-door");
     }
 
     const result = await renameFob(oldName, newName as string);

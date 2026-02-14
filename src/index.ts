@@ -81,12 +81,17 @@ program
     .description("Check device connection, firmware, and antenna health")
     .action(withExitCode(doctor));
 
-program.command("read").description("Read and identify a tag on the antenna").action(withExitCode(read));
+program
+    .command("read")
+    .description("Read and identify a tag on the antenna")
+    .option("--save-as <name>", "save the tag with this name")
+    .action(withExitCode((opts: { saveAs?: string }) => read(opts)));
 
 program
     .command("clone")
     .description("Interactive guided clone flow (read + write + verify)")
-    .action(withExitCode(clone));
+    .option("--save-as <name>", "save the cloned tag with this name")
+    .action(withExitCode((opts: { saveAs?: string }) => clone(opts)));
 
 program
     .command("write")
