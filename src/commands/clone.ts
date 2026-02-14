@@ -1,7 +1,7 @@
 import * as p from "@clack/prompts";
 import { writeAndVerify } from "../lib/card-ops.js";
 import { printCardInfo, printDoctorHint } from "../lib/display.js";
-import { parseLfSearch } from "../lib/parsers.js";
+import { parseHfSearch, parseLfSearch } from "../lib/parsers.js";
 import { Pm3Error, pm3Exec, requireDevice } from "../lib/pm3.js";
 import { promptName, waitForEnter } from "../lib/prompts.js";
 import { saveFob } from "../lib/store.js";
@@ -50,9 +50,32 @@ export async function clone(): Promise<boolean> {
         }
     }
 
+    // If LF search failed, try HF
     if (!card) {
-        p.log.error("Failed to read original card after all attempts.");
-        return false;
+        const hfSpinner = p.spinner();
+        hfSpinner.start("No LF card found, trying HF...");
+        try {
+            const { stdout } = await pm3Exec("hf search");
+            const hfCard = parseHfSearch(stdout);
+            if (hfCard) {
+                hfSpinner.stop("HF card detected");
+                printCardInfo(hfCard);
+                p.log.warn(
+                    `HF card cloning (${hfCard.type}) is not yet supported. Only LF keyfobs (EM410x, HID Prox) can be cloned.`,
+                );
+                return false;
+            }
+        } catch (err) {
+            if (err instanceof Pm3Error) {
+                hfSpinner.stop(err.message);
+            } else {
+                hfSpinner.stop("HF search failed.");
+            }
+        }
+        if (!card) {
+            p.log.error("Failed to read original card after all attempts.");
+            return false;
+        }
     }
 
     printCardInfo(card);

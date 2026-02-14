@@ -47,8 +47,30 @@ describe("read", () => {
         );
     });
 
-    it("no card detected → false", async () => {
+    it("HF card found when LF fails → saves as HF type", async () => {
+        // LF search returns nothing
         mockPm3Exec.mockResolvedValueOnce({ stdout: "no known cards", stderr: "" });
+        // HF search finds MIFARE Classic
+        mockPm3Exec.mockResolvedValueOnce({
+            stdout: "[+]  UID: DE AD BE EF\n[+] MIFARE Classic EV1 1K",
+            stderr: "",
+        });
+        mockPromptName.mockResolvedValue("laundry");
+        mockSaveFob.mockResolvedValue(undefined);
+
+        expect(await read()).toBe(true);
+        expect(mockSaveFob).toHaveBeenCalledWith(
+            expect.objectContaining({
+                name: "laundry",
+                type: "MIFARE Classic 1K",
+                id: "DEADBEEF",
+            }),
+        );
+    });
+
+    it("no card detected on LF or HF → false", async () => {
+        mockPm3Exec.mockResolvedValueOnce({ stdout: "no known cards", stderr: "" });
+        mockPm3Exec.mockResolvedValueOnce({ stdout: "no known HF tags", stderr: "" });
 
         expect(await read()).toBe(false);
         expect(mockPromptName).not.toHaveBeenCalled();

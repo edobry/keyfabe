@@ -56,20 +56,46 @@ describe("clone", () => {
         );
     });
 
-    it("read fails all 3 retries → false", async () => {
+    it("read fails all 3 retries, no HF card → false", async () => {
         vi.useFakeTimers();
 
         mockPm3Exec
             .mockResolvedValueOnce({ stdout: "no cards", stderr: "" })
             .mockResolvedValueOnce({ stdout: "no cards", stderr: "" })
-            .mockResolvedValueOnce({ stdout: "no cards", stderr: "" });
+            .mockResolvedValueOnce({ stdout: "no cards", stderr: "" })
+            // HF search also finds nothing
+            .mockResolvedValueOnce({ stdout: "no known HF tags", stderr: "" });
 
         const clonePromise = clone();
         await vi.advanceTimersByTimeAsync(2000);
         await vi.advanceTimersByTimeAsync(2000);
         await clonePromise;
 
-        expect(mockPm3Exec).toHaveBeenCalledTimes(3);
+        expect(mockPm3Exec).toHaveBeenCalledTimes(4);
+        expect(mockWriteAndVerify).not.toHaveBeenCalled();
+
+        vi.useRealTimers();
+    });
+
+    it("LF fails, HF card detected → warns not supported and returns false", async () => {
+        vi.useFakeTimers();
+
+        mockPm3Exec
+            .mockResolvedValueOnce({ stdout: "no cards", stderr: "" })
+            .mockResolvedValueOnce({ stdout: "no cards", stderr: "" })
+            .mockResolvedValueOnce({ stdout: "no cards", stderr: "" })
+            // HF search finds MIFARE Classic
+            .mockResolvedValueOnce({
+                stdout: "[+]  UID: DE AD BE EF\n[+] MIFARE Classic EV1 1K",
+                stderr: "",
+            });
+
+        const clonePromise = clone();
+        await vi.advanceTimersByTimeAsync(2000);
+        await vi.advanceTimersByTimeAsync(2000);
+        const result = await clonePromise;
+
+        expect(result).toBe(false);
         expect(mockWriteAndVerify).not.toHaveBeenCalled();
 
         vi.useRealTimers();

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
     parseCloneResult,
+    parseHfSearch,
     parseHwStatus,
     parseHwTune,
     parseLfSearch,
@@ -121,6 +122,93 @@ describe("parseLfSearch", () => {
     it("returns null when no card found", () => {
         const output = `[!] No known LF cards found`;
         const result = parseLfSearch(output);
+        expect(result).toBeNull();
+    });
+});
+
+describe("parseHfSearch", () => {
+    it("parses MIFARE Classic 1K", () => {
+        const output = `
+[+]  UID: DE AD BE EF
+[+] ATQA: 00 04
+[+]  SAK: 08 [2]
+[+] Possible types:
+[+]    MIFARE Classic EV1 1K
+        `;
+        const result = parseHfSearch(output);
+        expect(result).toEqual({
+            type: "MIFARE Classic 1K",
+            id: "DEADBEEF",
+        });
+    });
+
+    it("parses MIFARE Classic 4K", () => {
+        const output = `
+[+]  UID: 01 02 03 04
+[+]  SAK: 18
+[+] MIFARE Classic 4K
+        `;
+        const result = parseHfSearch(output);
+        expect(result).toEqual({
+            type: "MIFARE Classic 4K",
+            id: "01020304",
+        });
+    });
+
+    it("parses MIFARE Ultralight with 7-byte UID", () => {
+        const output = `
+[+]  UID: 04 68 95 71 FA 5C 64
+[+] ATQA: 00 44
+[+]  SAK: 00
+[+] MIFARE Ultralight
+        `;
+        const result = parseHfSearch(output);
+        expect(result).toEqual({
+            type: "MIFARE Ultralight",
+            id: "04689571FA5C64",
+        });
+    });
+
+    it("parses MIFARE DESFire", () => {
+        const output = `
+[+]  UID: 04 A1 B2 C3 D4 E5 F6
+[+] MIFARE DESFire EV1
+        `;
+        const result = parseHfSearch(output);
+        expect(result).toEqual({
+            type: "MIFARE DESFire",
+            id: "04A1B2C3D4E5F6",
+        });
+    });
+
+    it("parses generic ISO 14443-A with UID", () => {
+        const output = `
+[+]  UID: AB CD EF 01
+[+] ATQA: 00 04
+[+]  SAK: 20
+        `;
+        const result = parseHfSearch(output);
+        expect(result).toEqual({
+            type: "ISO 14443-A",
+            id: "ABCDEF01",
+        });
+    });
+
+    it("parses UID with bracket size notation", () => {
+        const output = `
+[+]  UID[4]: AA BB CC DD
+[+] MIFARE Classic 1K
+        `;
+        const result = parseHfSearch(output);
+        expect(result).toEqual({
+            type: "MIFARE Classic 1K",
+            id: "AABBCCDD",
+        });
+    });
+
+    it("returns null when no HF card found", () => {
+        const output = `[!] No known/supported 13.56 MHz tags found`;
+        const result = parseHfSearch(output);
         expect(result).toBeNull();
     });
 });

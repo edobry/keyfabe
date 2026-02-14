@@ -1,6 +1,6 @@
 import * as p from "@clack/prompts";
 import { printCardInfo, printDoctorHint } from "../lib/display.js";
-import { parseLfSearch } from "../lib/parsers.js";
+import { parseHfSearch, parseLfSearch } from "../lib/parsers.js";
 import { Pm3Error, pm3Exec, requireDevice } from "../lib/pm3.js";
 import { promptName } from "../lib/prompts.js";
 import { saveFob } from "../lib/store.js";
@@ -29,12 +29,32 @@ export async function read(): Promise<boolean> {
     }
 
     if (!card) {
-        s.stop("No card detected. Make sure the fob is flat against the antenna.");
-        p.log.error("No card detected. Make sure the fob is flat against the antenna.");
-        return false;
-    }
+        s.stop("No LF card found, trying HF...");
+        const hf = p.spinner();
+        hf.start("Searching for card (HF)...");
+        try {
+            const { stdout } = await pm3Exec("hf search");
+            card = parseHfSearch(stdout);
+        } catch (err) {
+            if (err instanceof Pm3Error) {
+                hf.stop(err.message);
+                p.log.error(err.message);
+                if (err.message.includes("not found")) {
+                    printDoctorHint();
+                }
+                return false;
+            }
+        }
 
-    s.stop("Card detected");
+        if (!card) {
+            hf.stop("No card detected. Make sure the card is flat against the antenna.");
+            p.log.error("No card detected. Make sure the card is flat against the antenna.");
+            return false;
+        }
+        hf.stop("Card detected");
+    } else {
+        s.stop("Card detected");
+    }
     printCardInfo(card);
 
     // Prompt to save

@@ -86,6 +86,29 @@ export function parseT55xxDetect(output: string): T55xxInfo | null {
     };
 }
 
+export function parseHfSearch(output: string): CardInfo | null {
+    // Extract UID — formats: "UID: AB CD EF 01" or "UID: ABCDEF01" or "UID[4]: AB CD EF 01"
+    const uidMatch = output.match(/UID\s*(?:\[\d+\])?\s*[:=]\s*([0-9A-Fa-f]{2}(?:\s+[0-9A-Fa-f]{2})*)/i);
+    if (!uidMatch) return null;
+
+    const uid = uidMatch[1].replace(/\s+/g, "").toUpperCase();
+
+    // Determine card type from SAK, ATQA, or text
+    let type = "ISO 14443-A";
+
+    if (/MIFARE\s*Classic.*4K/i.test(output)) {
+        type = "MIFARE Classic 4K";
+    } else if (/MIFARE\s*Classic/i.test(output)) {
+        type = "MIFARE Classic 1K";
+    } else if (/MIFARE\s*Ultralight|NTAG/i.test(output)) {
+        type = "MIFARE Ultralight";
+    } else if (/MIFARE\s*DESFire/i.test(output)) {
+        type = "MIFARE DESFire";
+    }
+
+    return { type, id: uid };
+}
+
 export function parseCloneResult(output: string): CloneResult {
     const hasError = /error/i.test(output) && !/errorrate/i.test(output);
     const hasDone = /done/i.test(output) || /written/i.test(output) || /cloned/i.test(output);
