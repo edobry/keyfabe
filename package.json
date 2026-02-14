@@ -1,6 +1,6 @@
 {
   "name": "keyfabe",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "CLI tool for Proxmark3 RFID tag cloning",
   "license": "MIT",
   "type": "module",

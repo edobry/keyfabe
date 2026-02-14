@@ -1,3 +1,10 @@
+# [0.5.0](https://github.com/edobry/keyfabe/compare/v0.4.0...v0.5.0) (2026-02-14)
+
+
+### Features
+
+* add HF write support, dedup strings, normalize terminology to "tag" ([23f6d6d](https://github.com/edobry/keyfabe/commit/23f6d6d1b5e80a7daadff7e68e20dbc08b4c67d6))
+
 # [0.4.0](https://github.com/edobry/keyfabe/compare/v0.3.0...v0.4.0) (2026-02-14)
 
 
