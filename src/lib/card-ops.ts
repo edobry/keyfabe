@@ -21,7 +21,7 @@ function cloneCommand(card: CardInfo): string {
             return `lf hid clone -r ${card.id}`;
         case CardType.MIFARE_CLASSIC_1K:
         case CardType.MIFARE_CLASSIC_4K:
-            return `hf mf csetuid ${card.id}`;
+            return `hf mf csetuid -u ${card.id}`;
         default:
             throw new Error(`Unsupported card type: ${card.type}`);
     }
