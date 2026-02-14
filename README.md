@@ -131,7 +131,7 @@ Imports tag identities from a JSON file. New names are added, existing names are
 
 | Type | Frequency | Read | Clone | Notes |
 |------|-----------|------|-------|-------|
-| EM410x | LF (125 kHz) | yes | yes | Most common LF keyfob |
+| EM410x | LF (125 kHz) | yes | yes | Most common LF tag |
 | HID Prox | LF (125 kHz) | yes | yes | Uses `lf hid clone` |
 | MIFARE Classic 1K/4K | HF (13.56 MHz) | yes | yes | Requires Gen1A magic card (`hf mf csetuid`) |
 | MIFARE Ultralight | HF (13.56 MHz) | yes | no | Read-only support |
