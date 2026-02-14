@@ -1,4 +1,5 @@
 import * as p from "@clack/prompts";
+import { Pm3Cmd } from "../lib/constants.js";
 import { printBrewInstall } from "../lib/display.js";
 import {
     buildFirmware,
@@ -54,7 +55,7 @@ export async function setup(): Promise<boolean> {
     const diagSpinner = p.spinner();
     diagSpinner.start("Running hw status...");
     try {
-        const { stdout } = await pm3Exec("hw status");
+        const { stdout } = await pm3Exec(Pm3Cmd.HW_STATUS);
         const status = parseHwStatus(stdout);
 
         if (status.connected) {
@@ -162,7 +163,7 @@ export async function setup(): Promise<boolean> {
     const verifySpinner = p.spinner();
     verifySpinner.start("Checking communication...");
     try {
-        const { stdout } = await pm3Exec("hw status");
+        const { stdout } = await pm3Exec(Pm3Cmd.HW_STATUS);
         const status = parseHwStatus(stdout);
 
         if (!status.connected) {
@@ -181,7 +182,7 @@ export async function setup(): Promise<boolean> {
     const tuneSpinner = p.spinner();
     tuneSpinner.start("Checking antenna tuning...");
     try {
-        const { stdout } = await pm3Exec("hw tune");
+        const { stdout } = await pm3Exec(Pm3Cmd.HW_TUNE);
         const tune = parseHwTune(stdout);
         tuneSpinner.stop("Antenna check complete");
         p.log.success(`LF antenna: ${tune.lfVoltage.toFixed(2)}V (125 kHz)`);

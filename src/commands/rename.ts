@@ -1,5 +1,5 @@
 import * as p from "@clack/prompts";
-import { printFobNotFound } from "../lib/display.js";
+import { printFobNotFound, printNoSavedTags } from "../lib/display.js";
 import { selectFob } from "../lib/prompts.js";
 import { loadFobs, renameFob } from "../lib/store.js";
 
@@ -14,10 +14,10 @@ export async function rename(oldName?: string, newName?: string): Promise<boolea
     if (!oldName) {
         const fobs = await loadFobs();
         if (fobs.length === 0) {
-            p.log.warn("No saved fobs. Use `keyfabe read` or `keyfabe clone` first.");
+            printNoSavedTags();
             return false;
         }
-        oldName = await selectFob(fobs, "Which fob to rename?");
+        oldName = await selectFob(fobs, "Which tag to rename?");
     }
 
     if (!newName) {
@@ -34,7 +34,7 @@ export async function rename(oldName?: string, newName?: string): Promise<boolea
     }
 
     if (result === "name-taken") {
-        p.log.error(`A fob named "${newName}" already exists. Delete it first or choose a different name.`);
+        p.log.error(`A tag named "${newName}" already exists. Delete it first or choose a different name.`);
         return false;
     }
 

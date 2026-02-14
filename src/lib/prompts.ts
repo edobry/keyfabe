@@ -26,7 +26,7 @@ export async function promptName(): Promise<string | null> {
     return trimmed || null;
 }
 
-export async function selectFob(fobs: Fob[], message = "Select a fob"): Promise<string> {
+export async function selectFob(fobs: Fob[], message = "Select a tag"): Promise<string> {
     const value = await p.select({
         message,
         options: fobs.map((f) => ({

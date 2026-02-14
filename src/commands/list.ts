@@ -10,7 +10,7 @@ export async function list(options: { json?: boolean } = {}): Promise<boolean> {
     }
 
     if (fobs.length === 0) {
-        p.log.info("No saved fobs. Use `keyfabe read` or `keyfabe clone` to save one.");
+        p.log.info("No saved tags. Use `keyfabe read` or `keyfabe clone` to save one.");
         return true;
     }
 
@@ -40,6 +40,6 @@ export async function list(options: { json?: boolean } = {}): Promise<boolean> {
         rows.push(row);
     }
 
-    p.note(`${header}\n${rows.join("\n")}`, `Saved Fobs (${fobs.length})`);
+    p.note(`${header}\n${rows.join("\n")}`, `Saved Tags (${fobs.length})`);
     return true;
 }

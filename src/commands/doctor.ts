@@ -1,5 +1,6 @@
 import * as p from "@clack/prompts";
 import chalk from "chalk";
+import { Pm3Cmd } from "../lib/constants.js";
 import { HF_VOLTAGE_THRESHOLD, LF_VOLTAGE_THRESHOLD, printBrewInstall } from "../lib/display.js";
 import { parseHwStatus, parseHwTune } from "../lib/parsers.js";
 import { detectPort, Pm3Error, pm3Exec } from "../lib/pm3.js";
@@ -20,7 +21,7 @@ export async function doctor(): Promise<boolean> {
     const s = p.spinner();
     s.start("Checking device communication...");
     try {
-        const { stdout } = await pm3Exec("hw status");
+        const { stdout } = await pm3Exec(Pm3Cmd.HW_STATUS);
         const status = parseHwStatus(stdout);
 
         if (status.isStockFirmware) {
@@ -55,7 +56,7 @@ export async function doctor(): Promise<boolean> {
     const tuneSpinner = p.spinner();
     tuneSpinner.start("Checking antenna tuning...");
     try {
-        const { stdout } = await pm3Exec("hw tune");
+        const { stdout } = await pm3Exec(Pm3Cmd.HW_TUNE);
         const tune = parseHwTune(stdout);
         tuneSpinner.stop("Antenna tuning complete");
 

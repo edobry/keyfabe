@@ -34,7 +34,7 @@ describe("show", () => {
         });
 
         expect(await show("front-door")).toBe(true);
-        expect(mockNote).toHaveBeenCalledWith(expect.stringContaining("front-door"), "Fob Details");
+        expect(mockNote).toHaveBeenCalledWith(expect.stringContaining("front-door"), "Tag Details");
         const noteContent = mockNote.mock.calls[0][0] as string;
         expect(noteContent).toContain("EM410x");
         expect(noteContent).toContain("1A2B3C4D5E");

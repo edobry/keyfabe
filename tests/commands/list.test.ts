@@ -33,7 +33,7 @@ describe("list", () => {
         ]);
 
         expect(await list()).toBe(true);
-        expect(mockNote).toHaveBeenCalledWith(expect.stringContaining("front-door"), "Saved Fobs (2)");
+        expect(mockNote).toHaveBeenCalledWith(expect.stringContaining("front-door"), "Saved Tags (2)");
         const noteContent = mockNote.mock.calls[0][0] as string;
         expect(noteContent).toContain("garage");
         expect(noteContent).toContain("EM410x");

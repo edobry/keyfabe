@@ -1,20 +1,21 @@
 import * as p from "@clack/prompts";
 import { writeAndVerify } from "../lib/card-ops.js";
-import { printFobNotFound } from "../lib/display.js";
+import { cardFrequency } from "../lib/constants.js";
+import { printFobNotFound, printNoSavedTags } from "../lib/display.js";
 import { requireDevice } from "../lib/pm3.js";
 import { selectFob, waitForEnter } from "../lib/prompts.js";
 import { getFob, loadFobs } from "../lib/store.js";
 
 export async function write(name?: string): Promise<boolean> {
-    p.intro("Write Fob");
+    p.intro("Write Tag");
 
     if (!name) {
         const fobs = await loadFobs();
         if (fobs.length === 0) {
-            p.log.warn("No saved fobs. Use `keyfabe read` or `keyfabe clone` first.");
+            printNoSavedTags();
             return false;
         }
-        name = await selectFob(fobs, "Which fob identity to write?");
+        name = await selectFob(fobs, "Which tag identity to write?");
     }
 
     const fob = await getFob(name);
@@ -27,7 +28,12 @@ export async function write(name?: string): Promise<boolean> {
 
     p.log.info(`Writing "${fob.name}" (${fob.type} ${fob.id})`);
 
-    await waitForEnter("Place a blank T55x7 fob on the antenna.");
+    const freq = cardFrequency(fob.type);
+    if (freq === "LF") {
+        await waitForEnter("Place a blank T55x7 tag on the antenna.");
+    } else {
+        await waitForEnter("Place the target tag on the antenna.");
+    }
 
     const success = await writeAndVerify({ type: fob.type, id: fob.id, encoding: fob.encoding });
 

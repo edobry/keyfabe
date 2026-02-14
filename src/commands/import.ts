@@ -34,7 +34,7 @@ export async function importFile(filePath: string): Promise<boolean> {
     }
 
     if (!validateFobs(data)) {
-        p.log.error("Invalid format. Expected an array of fob objects with name, type, id, and savedAt.");
+        p.log.error("Invalid format. Expected an array of tag objects with name, type, id, and savedAt.");
         return false;
     }
 

@@ -1,3 +1,5 @@
+import { CardType } from "./constants.js";
+
 export interface HwStatus {
     connected: boolean;
     firmwareVersion: string;
@@ -51,7 +53,7 @@ export function parseLfSearch(output: string): CardInfo | null {
     if (emMatch) {
         const encodingMatch = output.match(/RF\/(\d+)/);
         return {
-            type: "EM410x",
+            type: CardType.EM410x,
             id: emMatch[1].toUpperCase(),
             encoding: encodingMatch ? `RF/${encodingMatch[1]}` : undefined,
         };
@@ -61,7 +63,7 @@ export function parseLfSearch(output: string): CardInfo | null {
     const hidMatch = output.match(/HID\s*Prox\s*(?:TAG\s*)?ID\s*[:\s]*([0-9A-Fa-f]+)/i);
     if (hidMatch) {
         return {
-            type: "HID Prox",
+            type: CardType.HID_PROX,
             id: hidMatch[1].toUpperCase(),
         };
     }
@@ -94,16 +96,16 @@ export function parseHfSearch(output: string): CardInfo | null {
     const uid = uidMatch[1].replace(/\s+/g, "").toUpperCase();
 
     // Determine card type from SAK, ATQA, or text
-    let type = "ISO 14443-A";
+    let type: string = CardType.ISO_14443A;
 
     if (/MIFARE\s*Classic.*4K/i.test(output)) {
-        type = "MIFARE Classic 4K";
+        type = CardType.MIFARE_CLASSIC_4K;
     } else if (/MIFARE\s*Classic/i.test(output)) {
-        type = "MIFARE Classic 1K";
+        type = CardType.MIFARE_CLASSIC_1K;
     } else if (/MIFARE\s*Ultralight|NTAG/i.test(output)) {
-        type = "MIFARE Ultralight";
+        type = CardType.MIFARE_ULTRALIGHT;
     } else if (/MIFARE\s*DESFire/i.test(output)) {
-        type = "MIFARE DESFire";
+        type = CardType.MIFARE_DESFIRE;
     }
 
     return { type, id: uid };

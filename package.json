@@ -1,7 +1,7 @@
 {
   "name": "keyfabe",
   "version": "0.4.0",
-  "description": "CLI tool for Proxmark3 keyfob cloning",
+  "description": "CLI tool for Proxmark3 RFID tag cloning",
   "license": "MIT",
   "type": "module",
   "bin": {
@@ -21,9 +21,10 @@
   "keywords": [
     "proxmark3",
     "rfid",
+    "nfc",
+    "mifare",
     "keyfob",
-    "clone",
-    "nfc"
+    "clone"
   ],
   "scripts": {
     "dev": "tsx src/index.ts",

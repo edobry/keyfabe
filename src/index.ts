@@ -20,7 +20,7 @@ function withExitCode(fn: (...args: any[]) => Promise<boolean>) {
     };
 }
 
-program.name("keyfabe").description("CLI tool for Proxmark3 keyfob cloning").version("0.1.0");
+program.name("keyfabe").description("CLI tool for Proxmark3 tag cloning").version("0.1.0");
 
 program.action(
     withExitCode(async () => {
@@ -34,10 +34,10 @@ program.action(
         const action = await p.select({
             message: "What would you like to do?",
             options: [
-                { value: "clone", label: "Clone a keyfob", hint: "read + write + verify" },
-                { value: "read", label: "Read a card", hint: "identify a fob" },
-                { value: "write", label: "Write a saved identity", hint: "write to blank fob" },
-                { value: "list", label: "List saved fobs" },
+                { value: "clone", label: "Clone a tag", hint: "read + write + verify" },
+                { value: "read", label: "Read a tag", hint: "identify and save" },
+                { value: "write", label: "Write a saved identity", hint: "write to blank tag" },
+                { value: "list", label: "List saved tags" },
                 { value: "doctor", label: "Health check", hint: "diagnose device" },
                 { value: "setup", label: "Firmware setup", hint: "flash Iceman firmware" },
             ],
@@ -72,46 +72,49 @@ program
     .description("Check device connection, firmware, and antenna health")
     .action(withExitCode(doctor));
 
-program.command("read").description("Read and identify a fob on the antenna").action(withExitCode(read));
+program.command("read").description("Read and identify a tag on the antenna").action(withExitCode(read));
 
-program.command("clone").description("Interactive guided clone flow (read + write)").action(withExitCode(clone));
+program
+    .command("clone")
+    .description("Interactive guided clone flow (read + write + verify)")
+    .action(withExitCode(clone));
 
 program
     .command("write")
-    .description("Write a previously-saved identity to a blank fob")
-    .argument("[name]", "name of the saved fob identity")
+    .description("Write a previously-saved identity to a blank tag")
+    .argument("[name]", "name of the saved tag identity")
     .action(withExitCode(write));
 
 program
     .command("list")
-    .description("List all saved fob identities")
+    .description("List all saved tag identities")
     .option("--json", "output as JSON")
     .action(withExitCode(list));
 
 program
     .command("show")
-    .description("Show details of a saved fob identity")
-    .argument("[name]", "name of the saved fob identity")
+    .description("Show details of a saved tag identity")
+    .argument("[name]", "name of the saved tag identity")
     .action(withExitCode(show));
 
 program
     .command("rename")
-    .description("Rename a saved fob identity")
+    .description("Rename a saved tag identity")
     .argument("[old-name]", "current name")
     .argument("[new-name]", "new name")
     .action(withExitCode(rename));
 
 program
     .command("delete")
-    .description("Delete a saved fob identity")
-    .argument("[name]", "name of the saved fob identity")
+    .description("Delete a saved tag identity")
+    .argument("[name]", "name of the saved tag identity")
     .action(withExitCode(deleteFob));
 
-program.command("export").description("Export all saved fob identities as JSON").action(withExitCode(exportFobs));
+program.command("export").description("Export all saved tag identities as JSON").action(withExitCode(exportFobs));
 
 program
     .command("import")
-    .description("Import fob identities from a JSON file")
+    .description("Import tag identities from a JSON file")
     .argument("<file>", "path to JSON file")
     .action(withExitCode(importFile));
 

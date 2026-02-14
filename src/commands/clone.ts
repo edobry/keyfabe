@@ -1,8 +1,9 @@
 import * as p from "@clack/prompts";
-import { writeAndVerify } from "../lib/card-ops.js";
+import { searchCard, writeAndVerify } from "../lib/card-ops.js";
+import { cardFrequency } from "../lib/constants.js";
 import { printCardInfo, printDoctorHint } from "../lib/display.js";
-import { parseHfSearch, parseLfSearch } from "../lib/parsers.js";
-import { Pm3Error, pm3Exec, requireDevice } from "../lib/pm3.js";
+import type { CardInfo } from "../lib/parsers.js";
+import { Pm3Error, requireDevice } from "../lib/pm3.js";
 import { promptName, waitForEnter } from "../lib/prompts.js";
 import { saveFob } from "../lib/store.js";
 
@@ -12,25 +13,24 @@ const READ_RETRY_DELAY = 2000;
 export async function clone(): Promise<boolean> {
     if (!(await requireDevice())) return false;
 
-    p.intro("Keyfob Clone");
+    p.intro("Clone Tag");
 
     // Step 1: Read original
-    await waitForEnter("Place your original keyfob on the antenna.");
+    await waitForEnter("Place your original tag on the antenna.");
 
-    let card: ReturnType<typeof parseLfSearch> = null;
+    let card: CardInfo | null = null;
 
     for (let attempt = 1; attempt <= MAX_READ_RETRIES; attempt++) {
         const s = p.spinner();
         s.start(`Reading original (attempt ${attempt}/${MAX_READ_RETRIES})...`);
         try {
-            const { stdout } = await pm3Exec("lf search");
-            card = parseLfSearch(stdout);
+            card = await searchCard();
             if (card) {
-                s.stop("Original card read");
+                s.stop("Original tag read");
                 break;
             }
-            s.stop("No card detected.");
-            p.log.error("No card detected.");
+            s.stop("No tag detected.");
+            p.log.error("No tag detected.");
         } catch (err) {
             if (err instanceof Pm3Error) {
                 s.stop(err.message);
@@ -50,38 +50,20 @@ export async function clone(): Promise<boolean> {
         }
     }
 
-    // If LF search failed, try HF
     if (!card) {
-        const hfSpinner = p.spinner();
-        hfSpinner.start("No LF card found, trying HF...");
-        try {
-            const { stdout } = await pm3Exec("hf search");
-            const hfCard = parseHfSearch(stdout);
-            if (hfCard) {
-                hfSpinner.stop("HF card detected");
-                printCardInfo(hfCard);
-                p.log.warn(
-                    `HF card cloning (${hfCard.type}) is not yet supported. Only LF keyfobs (EM410x, HID Prox) can be cloned.`,
-                );
-                return false;
-            }
-        } catch (err) {
-            if (err instanceof Pm3Error) {
-                hfSpinner.stop(err.message);
-            } else {
-                hfSpinner.stop("HF search failed.");
-            }
-        }
-        if (!card) {
-            p.log.error("Failed to read original card after all attempts.");
-            return false;
-        }
+        p.log.error("Failed to read original tag after all attempts.");
+        return false;
     }
 
     printCardInfo(card);
 
     // Step 2: Write to blank
-    await waitForEnter("Remove original and place a blank T55x7 fob on the antenna.");
+    const freq = cardFrequency(card.type);
+    if (freq === "LF") {
+        await waitForEnter("Remove original and place a blank T55x7 tag on the antenna.");
+    } else {
+        await waitForEnter("Remove original and place the target tag on the antenna.");
+    }
 
     const success = await writeAndVerify(card);
 
