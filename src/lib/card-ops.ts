@@ -118,6 +118,14 @@ export async function writeAndVerify(card: CardInfo): Promise<boolean> {
         magicSpinner.start("Detecting magic card type...");
         try {
             magicType = await detectMagicType();
+            if (magicType === MagicCardType.BRICKED) {
+                stopWithError(
+                    magicSpinner,
+                    "Card has broken anticollision — it may have a corrupted block 0 (bad BCC).",
+                );
+                p.log.warn("Run `keyfabe repair` to fix it, then try writing again.");
+                return false;
+            }
             if (magicType === MagicCardType.UNKNOWN) {
                 stopWithError(magicSpinner, `Target is not a recognized magic card. Use a ${WriteTarget.HF}.`);
                 return false;

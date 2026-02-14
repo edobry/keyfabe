@@ -114,6 +114,7 @@ export function parseHfSearch(output: string): CardInfo | null {
 export function parseMagicType(output: string): MagicCardTypeName {
     if (/Gen\s*1\s*a|magic\s*backdoor/i.test(output)) return MagicCardType.GEN1A;
     if (/Gen\s*2|CUID/i.test(output)) return MagicCardType.GEN2_CUID;
+    if (/anticollision|can'?t select/i.test(output)) return MagicCardType.BRICKED;
     return MagicCardType.UNKNOWN;
 }
 

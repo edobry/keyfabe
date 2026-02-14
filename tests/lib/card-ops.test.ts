@@ -171,4 +171,15 @@ describe("writeAndVerify", () => {
 
         expect(await writeAndVerify(mifareCard)).toBe(false);
     });
+
+    it("HF: bricked card (anticollision failure) → false with repair hint", async () => {
+        const mifareCard = { type: "MIFARE Classic 1K", id: "DEADBEEF" };
+
+        mockPm3Exec.mockResolvedValueOnce({
+            stdout: "[!] Card doesn't support standard iso14443-3 anticollision",
+            stderr: "",
+        });
+
+        expect(await writeAndVerify(mifareCard)).toBe(false);
+    });
 });
