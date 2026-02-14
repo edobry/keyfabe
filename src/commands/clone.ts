@@ -1,7 +1,7 @@
 import * as p from "@clack/prompts";
-import { searchCard, writeAndVerify } from "../lib/card-ops.js";
-import { cardFrequency, WriteTarget } from "../lib/constants.js";
-import { printCardInfo, printDoctorHint } from "../lib/display.js";
+import { searchCardWithDiagnosis, writeAndVerify } from "../lib/card-ops.js";
+import { cardFrequency, DetectionSummary, WriteTarget } from "../lib/constants.js";
+import { printCardInfo, printDetectionHint, printDoctorHint } from "../lib/display.js";
 import type { CardInfo } from "../lib/parsers.js";
 import { Pm3Error, requireDevice } from "../lib/pm3.js";
 import { promptName, waitForEnter } from "../lib/prompts.js";
@@ -24,13 +24,15 @@ export async function clone(options?: { saveAs?: string }): Promise<boolean> {
         const s = p.spinner();
         s.start(`Reading original (attempt ${attempt}/${MAX_READ_RETRIES})...`);
         try {
-            card = await searchCard();
-            if (card) {
+            const result = await searchCardWithDiagnosis();
+            if (result.card) {
+                card = result.card;
                 s.stop("Original tag read");
                 break;
             }
-            s.stop("No tag detected.");
-            p.log.error("No tag detected.");
+            s.stop(DetectionSummary[result.diagnosis]);
+            p.log.error(DetectionSummary[result.diagnosis]);
+            printDetectionHint(result.diagnosis);
         } catch (err) {
             if (err instanceof Pm3Error) {
                 s.stop(err.message);

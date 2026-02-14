@@ -1,6 +1,7 @@
 import * as p from "@clack/prompts";
-import { searchCard } from "../lib/card-ops.js";
-import { printDoctorHint, printFobNotFound, printNoSavedTags } from "../lib/display.js";
+import { searchCardWithDiagnosis } from "../lib/card-ops.js";
+import { DetectionSummary } from "../lib/constants.js";
+import { printDetectionHint, printDoctorHint, printFobNotFound, printNoSavedTags } from "../lib/display.js";
 import { Pm3Error, requireDevice } from "../lib/pm3.js";
 import { selectFob, waitForEnter } from "../lib/prompts.js";
 import { getFob, loadFobs } from "../lib/store.js";
@@ -31,10 +32,11 @@ export async function verify(name?: string): Promise<boolean> {
     const spinner = p.spinner();
     spinner.start("Reading tag...");
     try {
-        const card = await searchCard();
+        const { card, diagnosis } = await searchCardWithDiagnosis();
         if (!card) {
-            spinner.stop("No tag detected.");
-            p.log.error("Could not read a tag. Make sure it's on the antenna.");
+            spinner.stop(DetectionSummary[diagnosis]);
+            p.log.error(DetectionSummary[diagnosis]);
+            printDetectionHint(diagnosis);
             return false;
         }
 

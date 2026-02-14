@@ -4,7 +4,7 @@ import { mockClack, mockPm3Module, setupBeforeEach } from "../helpers/mocks.js";
 mockPm3Module();
 mockClack();
 
-import { searchCard, writeAndVerify } from "../../src/lib/card-ops.js";
+import { searchCard, searchCardWithDiagnosis, writeAndVerify } from "../../src/lib/card-ops.js";
 import { Pm3Error, pm3Exec } from "../../src/lib/pm3.js";
 
 const mockPm3Exec = vi.mocked(pm3Exec);
@@ -49,6 +49,74 @@ describe("searchCard", () => {
         mockPm3Exec.mockRejectedValueOnce(new MockPm3Error("pm3 command not found", "", ""));
 
         await expect(searchCard()).rejects.toThrow("pm3 command not found");
+    });
+});
+
+describe("searchCardWithDiagnosis", () => {
+    it("LF card found → card + none diagnosis", async () => {
+        mockPm3Exec.mockResolvedValueOnce({
+            stdout: "[+] EM 410x Tag ID: 1A2B3C4D5E\n[+] RF/64",
+            stderr: "",
+        });
+
+        const result = await searchCardWithDiagnosis();
+        expect(result.card).toEqual({ type: "EM410x", id: "1A2B3C4D5E", encoding: "RF/64" });
+        expect(result.diagnosis).toBe("none");
+    });
+
+    it("HF card found → card + none diagnosis", async () => {
+        mockPm3Exec.mockResolvedValueOnce({ stdout: "no known cards", stderr: "" }).mockResolvedValueOnce({
+            stdout: "[+]  UID: DE AD BE EF\n[+] MIFARE Classic EV1 1K",
+            stderr: "",
+        });
+
+        const result = await searchCardWithDiagnosis();
+        expect(result.card).toEqual({ type: "MIFARE Classic 1K", id: "DEADBEEF" });
+        expect(result.diagnosis).toBe("none");
+    });
+
+    it("bricked HF → null + bricked_hf diagnosis", async () => {
+        mockPm3Exec.mockResolvedValueOnce({ stdout: "no known cards", stderr: "" }).mockResolvedValueOnce({
+            stdout: "[!] Card doesn't support standard iso14443-3 anticollision",
+            stderr: "",
+        });
+
+        const result = await searchCardWithDiagnosis();
+        expect(result.card).toBeNull();
+        expect(result.diagnosis).toBe("bricked_hf");
+    });
+
+    it("blank T55x7 → null + blank_t55x7 diagnosis", async () => {
+        mockPm3Exec
+            .mockResolvedValueOnce({ stdout: "no known cards", stderr: "" })
+            .mockResolvedValueOnce({ stdout: "no known HF tags", stderr: "" })
+            .mockResolvedValueOnce({ stdout: "[+] Chip Type: T55x7", stderr: "" });
+
+        const result = await searchCardWithDiagnosis();
+        expect(result.card).toBeNull();
+        expect(result.diagnosis).toBe("blank_t55x7");
+    });
+
+    it("nothing at all → null + none diagnosis", async () => {
+        mockPm3Exec
+            .mockResolvedValueOnce({ stdout: "no known cards", stderr: "" })
+            .mockResolvedValueOnce({ stdout: "no known HF tags", stderr: "" })
+            .mockResolvedValueOnce({ stdout: "[!] Could not detect modulation", stderr: "" });
+
+        const result = await searchCardWithDiagnosis();
+        expect(result.card).toBeNull();
+        expect(result.diagnosis).toBe("none");
+    });
+
+    it("T55x7 detect throws → null + none (graceful fallback)", async () => {
+        mockPm3Exec
+            .mockResolvedValueOnce({ stdout: "no known cards", stderr: "" })
+            .mockResolvedValueOnce({ stdout: "no known HF tags", stderr: "" })
+            .mockRejectedValueOnce(new MockPm3Error("pm3 command not found", "", ""));
+
+        const result = await searchCardWithDiagnosis();
+        expect(result.card).toBeNull();
+        expect(result.diagnosis).toBe("none");
     });
 });
 
@@ -150,14 +218,6 @@ describe("writeAndVerify", () => {
         expect(mockPm3Exec).not.toHaveBeenCalled();
     });
 
-    it("HF: unknown magic type → false", async () => {
-        const mifareCard = { type: "MIFARE Classic 1K", id: "DEADBEEF" };
-
-        mockPm3Exec.mockResolvedValueOnce({ stdout: "[+] Valid ISO 14443-A tag found", stderr: "" });
-
-        expect(await writeAndVerify(mifareCard)).toBe(false);
-    });
-
     it("HF: MIFARE Classic verify mismatch → false", async () => {
         const mifareCard = { type: "MIFARE Classic 1K", id: "DEADBEEF" };
 
@@ -179,6 +239,27 @@ describe("writeAndVerify", () => {
             stdout: "[!] Card doesn't support standard iso14443-3 anticollision",
             stderr: "",
         });
+
+        expect(await writeAndVerify(mifareCard)).toBe(false);
+    });
+
+    it("LF: HF card on antenna → false with frequency mismatch hint", async () => {
+        // T55x7 detect fails (no T55x7)
+        mockPm3Exec
+            .mockResolvedValueOnce({ stdout: "[!] Could not detect modulation", stderr: "" })
+            // HF search finds an HF card
+            .mockResolvedValueOnce({
+                stdout: "[+]  UID: DE AD BE EF\n[+] MIFARE Classic EV1 1K",
+                stderr: "",
+            });
+
+        expect(await writeAndVerify(emCard)).toBe(false);
+    });
+
+    it("HF: unknown magic type → false with not-magic hint", async () => {
+        const mifareCard = { type: "MIFARE Classic 1K", id: "DEADBEEF" };
+
+        mockPm3Exec.mockResolvedValueOnce({ stdout: "[+] Valid ISO 14443-A tag found", stderr: "" });
 
         expect(await writeAndVerify(mifareCard)).toBe(false);
     });

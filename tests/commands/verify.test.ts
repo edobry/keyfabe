@@ -5,7 +5,7 @@ mockPm3Module();
 mockClack();
 
 vi.mock("../../src/lib/card-ops.js", () => ({
-    searchCard: vi.fn(),
+    searchCardWithDiagnosis: vi.fn(),
 }));
 
 vi.mock("../../src/lib/store.js", () => ({
@@ -19,11 +19,11 @@ vi.mock("../../src/lib/prompts.js", () => ({
 }));
 
 import { verify } from "../../src/commands/verify.js";
-import { searchCard } from "../../src/lib/card-ops.js";
+import { searchCardWithDiagnosis } from "../../src/lib/card-ops.js";
 import { Pm3Error, requireDevice } from "../../src/lib/pm3.js";
 import { getFob, loadFobs } from "../../src/lib/store.js";
 
-const mockSearchCard = vi.mocked(searchCard);
+const mockSearchCardWithDiagnosis = vi.mocked(searchCardWithDiagnosis);
 const mockRequireDevice = vi.mocked(requireDevice);
 const mockGetFob = vi.mocked(getFob);
 const mockLoadFobs = vi.mocked(loadFobs);
@@ -42,7 +42,10 @@ describe("verify", () => {
             id: "DEADBEEF",
             savedAt: "2025-01-01",
         });
-        mockSearchCard.mockResolvedValueOnce({ type: "MIFARE Classic 1K", id: "DEADBEEF" });
+        mockSearchCardWithDiagnosis.mockResolvedValueOnce({
+            card: { type: "MIFARE Classic 1K", id: "DEADBEEF" },
+            diagnosis: "none",
+        });
 
         expect(await verify("my-tag")).toBe(true);
     });
@@ -54,7 +57,10 @@ describe("verify", () => {
             id: "DEADBEEF",
             savedAt: "2025-01-01",
         });
-        mockSearchCard.mockResolvedValueOnce({ type: "ISO 14443-A", id: "DEADBEEF" });
+        mockSearchCardWithDiagnosis.mockResolvedValueOnce({
+            card: { type: "ISO 14443-A", id: "DEADBEEF" },
+            diagnosis: "none",
+        });
 
         expect(await verify("my-tag")).toBe(true);
     });
@@ -66,7 +72,10 @@ describe("verify", () => {
             id: "DEADBEEF",
             savedAt: "2025-01-01",
         });
-        mockSearchCard.mockResolvedValueOnce({ type: "MIFARE Classic 1K", id: "AABBCCDD" });
+        mockSearchCardWithDiagnosis.mockResolvedValueOnce({
+            card: { type: "MIFARE Classic 1K", id: "AABBCCDD" },
+            diagnosis: "none",
+        });
 
         expect(await verify("my-tag")).toBe(false);
     });
@@ -78,7 +87,7 @@ describe("verify", () => {
             id: "1A2B3C4D5E",
             savedAt: "2025-01-01",
         });
-        mockSearchCard.mockResolvedValueOnce(null);
+        mockSearchCardWithDiagnosis.mockResolvedValueOnce({ card: null, diagnosis: "none" });
 
         expect(await verify("my-tag")).toBe(false);
     });
@@ -87,14 +96,14 @@ describe("verify", () => {
         mockLoadFobs.mockResolvedValueOnce([]);
 
         expect(await verify()).toBe(false);
-        expect(mockSearchCard).not.toHaveBeenCalled();
+        expect(mockSearchCardWithDiagnosis).not.toHaveBeenCalled();
     });
 
     it("saved tag not found by name → false", async () => {
         mockGetFob.mockResolvedValueOnce(undefined);
 
         expect(await verify("nonexistent")).toBe(false);
-        expect(mockSearchCard).not.toHaveBeenCalled();
+        expect(mockSearchCardWithDiagnosis).not.toHaveBeenCalled();
     });
 
     it("no device → false", async () => {
@@ -107,7 +116,7 @@ describe("verify", () => {
         mockRequireDevice.mockResolvedValueOnce(false);
 
         expect(await verify("my-tag")).toBe(false);
-        expect(mockSearchCard).not.toHaveBeenCalled();
+        expect(mockSearchCardWithDiagnosis).not.toHaveBeenCalled();
     });
 
     it("pm3 error during search → false", async () => {
@@ -117,7 +126,7 @@ describe("verify", () => {
             id: "1A2B3C4D5E",
             savedAt: "2025-01-01",
         });
-        mockSearchCard.mockRejectedValueOnce(new MockPm3Error("pm3 command not found", "", ""));
+        mockSearchCardWithDiagnosis.mockRejectedValueOnce(new MockPm3Error("pm3 command not found", "", ""));
 
         expect(await verify("my-tag")).toBe(false);
     });

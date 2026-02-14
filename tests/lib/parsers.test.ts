@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+    detectBrickedHf,
     parseBlock0Data,
     parseCloneResult,
     parseHfSearch,
@@ -263,6 +264,24 @@ describe("parseCloneResult", () => {
     it("detects failure when no done/written/cloned/verified", () => {
         const result = parseCloneResult("[+] some other output");
         expect(result.success).toBe(false);
+    });
+});
+
+describe("detectBrickedHf", () => {
+    it("detects anticollision failure", () => {
+        expect(detectBrickedHf("[!] Card doesn't support standard iso14443-3 anticollision")).toBe(true);
+    });
+
+    it("detects can't select", () => {
+        expect(detectBrickedHf("[!] can't select card")).toBe(true);
+    });
+
+    it("returns false for normal output", () => {
+        expect(detectBrickedHf("[+]  UID: DE AD BE EF\n[+] MIFARE Classic EV1 1K")).toBe(false);
+    });
+
+    it("returns false for empty output", () => {
+        expect(detectBrickedHf("")).toBe(false);
     });
 });
 

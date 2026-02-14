@@ -4,7 +4,7 @@ import { mockClack, setupBeforeEach } from "../helpers/mocks.js";
 mockClack();
 
 vi.mock("../../src/lib/card-ops.js", () => ({
-    searchCard: vi.fn(),
+    searchCardWithDiagnosis: vi.fn(),
 }));
 
 vi.mock("../../src/lib/pm3.js", () => ({
@@ -30,12 +30,12 @@ vi.mock("../../src/lib/prompts.js", () => ({
 }));
 
 import { read } from "../../src/commands/read.js";
-import { searchCard } from "../../src/lib/card-ops.js";
+import { searchCardWithDiagnosis } from "../../src/lib/card-ops.js";
 import { Pm3Error, requireDevice } from "../../src/lib/pm3.js";
 import { promptName } from "../../src/lib/prompts.js";
 import { saveFob } from "../../src/lib/store.js";
 
-const mockSearchCard = vi.mocked(searchCard);
+const mockSearchCardWithDiagnosis = vi.mocked(searchCardWithDiagnosis);
 const mockRequireDevice = vi.mocked(requireDevice);
 const mockSaveFob = vi.mocked(saveFob);
 const mockPromptName = vi.mocked(promptName);
@@ -48,10 +48,9 @@ beforeEach(() => {
 
 describe("read", () => {
     it("card found, user saves → calls saveFob", async () => {
-        mockSearchCard.mockResolvedValueOnce({
-            type: "EM410x",
-            id: "1A2B3C4D5E",
-            encoding: "RF/64",
+        mockSearchCardWithDiagnosis.mockResolvedValueOnce({
+            card: { type: "EM410x", id: "1A2B3C4D5E", encoding: "RF/64" },
+            diagnosis: "none",
         });
         mockPromptName.mockResolvedValue("my-fob");
         mockSaveFob.mockResolvedValue(undefined);
@@ -67,9 +66,9 @@ describe("read", () => {
     });
 
     it("HF card found → saves as HF type", async () => {
-        mockSearchCard.mockResolvedValueOnce({
-            type: "MIFARE Classic 1K",
-            id: "DEADBEEF",
+        mockSearchCardWithDiagnosis.mockResolvedValueOnce({
+            card: { type: "MIFARE Classic 1K", id: "DEADBEEF" },
+            diagnosis: "none",
         });
         mockPromptName.mockResolvedValue("laundry");
         mockSaveFob.mockResolvedValue(undefined);
@@ -85,23 +84,35 @@ describe("read", () => {
     });
 
     it("no card detected → false", async () => {
-        mockSearchCard.mockResolvedValueOnce(null);
+        mockSearchCardWithDiagnosis.mockResolvedValueOnce({ card: null, diagnosis: "none" });
 
         expect(await read()).toBe(false);
         expect(mockPromptName).not.toHaveBeenCalled();
+    });
+
+    it("blank T55x7 detected → false with blank hint", async () => {
+        mockSearchCardWithDiagnosis.mockResolvedValueOnce({ card: null, diagnosis: "blank_t55x7" });
+
+        expect(await read()).toBe(false);
+    });
+
+    it("bricked HF detected → false with repair hint", async () => {
+        mockSearchCardWithDiagnosis.mockResolvedValueOnce({ card: null, diagnosis: "bricked_hf" });
+
+        expect(await read()).toBe(false);
     });
 
     it("no device connected → false immediately", async () => {
         mockRequireDevice.mockResolvedValueOnce(false);
 
         expect(await read()).toBe(false);
-        expect(mockSearchCard).not.toHaveBeenCalled();
+        expect(mockSearchCardWithDiagnosis).not.toHaveBeenCalled();
     });
 
     it("user skips save → does not call saveFob", async () => {
-        mockSearchCard.mockResolvedValueOnce({
-            type: "EM410x",
-            id: "1A2B3C4D5E",
+        mockSearchCardWithDiagnosis.mockResolvedValueOnce({
+            card: { type: "EM410x", id: "1A2B3C4D5E" },
+            diagnosis: "none",
         });
         mockPromptName.mockResolvedValue(null);
 
@@ -110,7 +121,7 @@ describe("read", () => {
     });
 
     it("pm3 not found → false", async () => {
-        mockSearchCard.mockRejectedValueOnce(new MockPm3Error("pm3 command not found", "", ""));
+        mockSearchCardWithDiagnosis.mockRejectedValueOnce(new MockPm3Error("pm3 command not found", "", ""));
 
         expect(await read()).toBe(false);
     });
