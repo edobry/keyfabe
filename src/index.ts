@@ -13,6 +13,7 @@ import { rename } from "./commands/rename.js";
 import { repair } from "./commands/repair.js";
 import { setup } from "./commands/setup.js";
 import { show } from "./commands/show.js";
+import { verify } from "./commands/verify.js";
 import { write } from "./commands/write.js";
 
 const require = createRequire(import.meta.url);
@@ -42,6 +43,7 @@ program.action(
                 { value: "clone", label: "Clone a tag", hint: "read + write + verify" },
                 { value: "read", label: "Read a tag", hint: "identify and save" },
                 { value: "write", label: "Write a saved identity", hint: "write to blank tag" },
+                { value: "verify", label: "Verify a tag", hint: "compare to saved identity" },
                 { value: "list", label: "List saved tags" },
                 { value: "doctor", label: "Health check", hint: "diagnose device" },
                 { value: "setup", label: "Firmware setup", hint: "flash Iceman firmware" },
@@ -60,6 +62,8 @@ program.action(
                 return read();
             case "write":
                 return write();
+            case "verify":
+                return verify();
             case "list":
                 return list();
             case "doctor":
@@ -124,6 +128,12 @@ program
     .action(withExitCode(importFile));
 
 program.command("setup").description("Flash Iceman firmware to a stock Proxmark3 Easy").action(withExitCode(setup));
+
+program
+    .command("verify")
+    .description("Read a tag and compare it against a saved identity")
+    .argument("[name]", "name of the saved tag identity")
+    .action(withExitCode(verify));
 
 program
     .command("repair")

@@ -60,6 +60,9 @@ keyfabe read
 # write a previously-saved identity to a blank tag
 keyfabe write [name]
 
+# verify a tag against a saved identity
+keyfabe verify [name]
+
 # list saved identities
 keyfabe list
 
@@ -105,6 +108,10 @@ Reads and identifies whatever tag is on the antenna. Searches LF first, then fal
 ### `keyfabe write [name]`
 
 Writes a previously-saved identity to a blank tag. Without a name, presents an interactive picker.
+
+### `keyfabe verify [name]`
+
+Reads whatever tag is on the antenna and compares its ID against a saved identity. Reports match, partial match (ID matches but type differs), or mismatch. Without a name, presents an interactive picker.
 
 ### `keyfabe list`
 
@@ -171,6 +178,7 @@ src/
     read.ts             # read tag
     clone.ts            # guided clone flow
     write.ts            # write saved identity
+    verify.ts           # verify tag against saved identity
     list.ts             # list saved identities
     show.ts             # show saved identity details
     rename.ts           # rename saved identity
