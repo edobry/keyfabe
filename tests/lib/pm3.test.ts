@@ -17,6 +17,7 @@ vi.mock("node:fs/promises", () => ({
 import { execFile } from "node:child_process";
 import { readdir } from "node:fs/promises";
 import * as p from "@clack/prompts";
+import { Pm3Command } from "../../src/lib/constants.js";
 import { detectPort, Pm3Error, pm3Exec, requireDevice } from "../../src/lib/pm3.js";
 
 const mockLogError = vi.mocked(p.log.error);
@@ -29,14 +30,46 @@ beforeEach(() => {
     vi.spyOn(console, "log").mockImplementation(() => {});
 });
 
+describe("Pm3Command", () => {
+    it("joins parts with spaces", () => {
+        const cmd = new Pm3Command("hf", "mf", "csetuid");
+        expect(cmd.toString()).toBe("hf mf csetuid");
+    });
+
+    it("builds with arg flag and value", () => {
+        const base = new Pm3Command("lf", "em", "410x", "clone");
+        const withArg = base.arg("--id", "1A2B3C4D5E");
+        expect(withArg.toString()).toBe("lf em 410x clone --id 1A2B3C4D5E");
+    });
+
+    it("builds with flag-only arg", () => {
+        const cmd = new Pm3Command("hf", "search").arg("--verbose");
+        expect(cmd.toString()).toBe("hf search --verbose");
+    });
+
+    it("is immutable — arg returns a new instance", () => {
+        const base = new Pm3Command("lf", "search");
+        const extended = base.arg("--verbose");
+        expect(base.toString()).toBe("lf search");
+        expect(extended.toString()).toBe("lf search --verbose");
+    });
+
+    it("chains multiple args", () => {
+        const cmd = new Pm3Command("hf", "mf", "csetuid").arg("-u", "DEADBEEF").arg("--verbose");
+        expect(cmd.toString()).toBe("hf mf csetuid -u DEADBEEF --verbose");
+    });
+});
+
 describe("pm3Exec", () => {
+    const hwStatus = new Pm3Command("hw", "status");
+
     it("returns stdout and stderr on success", async () => {
         mockExecFile.mockImplementation((_cmd, _args, _opts, cb: any) => {
             cb(null, "output data", "err data");
             return {} as any;
         });
 
-        const result = await pm3Exec("hw status");
+        const result = await pm3Exec(hwStatus);
         expect(result).toEqual({ stdout: "output data", stderr: "err data" });
         expect(mockExecFile).toHaveBeenCalledWith(
             "pm3",
@@ -55,7 +88,7 @@ describe("pm3Exec", () => {
             return {} as any;
         });
 
-        const result = await pm3Exec("hw status");
+        const result = await pm3Exec(hwStatus);
         expect(result).toEqual({ stdout: "some output", stderr: "some error" });
     });
 
@@ -67,8 +100,8 @@ describe("pm3Exec", () => {
             return {} as any;
         });
 
-        await expect(pm3Exec("hw status")).rejects.toThrow(Pm3Error);
-        await expect(pm3Exec("hw status")).rejects.toThrow(/not found/);
+        await expect(pm3Exec(hwStatus)).rejects.toThrow(Pm3Error);
+        await expect(pm3Exec(hwStatus)).rejects.toThrow(/not found/);
     });
 
     it("rejects with Pm3Error on timeout (killed)", async () => {
@@ -79,8 +112,8 @@ describe("pm3Exec", () => {
             return {} as any;
         });
 
-        await expect(pm3Exec("hw status", 5000)).rejects.toThrow(Pm3Error);
-        await expect(pm3Exec("hw status", 5000)).rejects.toThrow(/timed out/);
+        await expect(pm3Exec(hwStatus, 5000)).rejects.toThrow(Pm3Error);
+        await expect(pm3Exec(hwStatus, 5000)).rejects.toThrow(/timed out/);
     });
 });
 
