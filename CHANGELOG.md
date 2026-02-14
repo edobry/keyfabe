@@ -1,3 +1,10 @@
+## [0.5.1](https://github.com/edobry/keyfabe/compare/v0.5.0...v0.5.1) (2026-02-14)
+
+
+### Bug Fixes
+
+* read version from package.json instead of hardcoding ([5bf0a92](https://github.com/edobry/keyfabe/commit/5bf0a92305714ce22587986777e90179d831f27f))
+
 # [0.5.0](https://github.com/edobry/keyfabe/compare/v0.4.0...v0.5.0) (2026-02-14)
 
 
