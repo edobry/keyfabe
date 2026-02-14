@@ -1,3 +1,10 @@
+# [0.7.0](https://github.com/edobry/keyfabe/compare/v0.6.0...v0.7.0) (2026-02-14)
+
+
+### Features
+
+* add verify command to compare tag on reader against saved identity ([4b55ab8](https://github.com/edobry/keyfabe/commit/4b55ab8107b7f7ff18259a812b9895484f5e8709))
+
 # [0.6.0](https://github.com/edobry/keyfabe/compare/v0.5.3...v0.6.0) (2026-02-14)
 
 
