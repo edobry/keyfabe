@@ -20,6 +20,11 @@ export function cardFrequency(type: string): "LF" | "HF" {
     }
 }
 
+export const WriteTarget = {
+    LF: "blank T55x7 tag",
+    HF: "Gen1A magic card",
+} as const;
+
 export const Pm3Cmd = {
     LF_SEARCH: "lf search",
     HF_SEARCH: "hf search",

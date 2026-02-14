@@ -1,6 +1,6 @@
 import * as p from "@clack/prompts";
 import { writeAndVerify } from "../lib/card-ops.js";
-import { cardFrequency } from "../lib/constants.js";
+import { cardFrequency, WriteTarget } from "../lib/constants.js";
 import { printFobNotFound, printNoSavedTags } from "../lib/display.js";
 import { requireDevice } from "../lib/pm3.js";
 import { selectFob, waitForEnter } from "../lib/prompts.js";
@@ -29,11 +29,7 @@ export async function write(name?: string): Promise<boolean> {
     p.log.info(`Writing "${fob.name}" (${fob.type} ${fob.id})`);
 
     const freq = cardFrequency(fob.type);
-    if (freq === "LF") {
-        await waitForEnter("Place a blank T55x7 tag on the antenna.");
-    } else {
-        await waitForEnter("Place the target tag on the antenna.");
-    }
+    await waitForEnter(`Place a ${WriteTarget[freq]} on the antenna.`);
 
     const success = await writeAndVerify({ type: fob.type, id: fob.id, encoding: fob.encoding });
 

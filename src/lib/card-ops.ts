@@ -1,5 +1,5 @@
 import * as p from "@clack/prompts";
-import { CardType, cardFrequency, Pm3Cmd } from "./constants.js";
+import { CardType, cardFrequency, Pm3Cmd, WriteTarget } from "./constants.js";
 import { printDoctorHint } from "./display.js";
 import { type CardInfo, parseCloneResult, parseHfSearch, parseLfSearch, parseT55xxDetect } from "./parsers.js";
 import { Pm3Error, pm3Exec } from "./pm3.js";
@@ -60,7 +60,7 @@ export async function writeAndVerify(card: CardInfo): Promise<boolean> {
             const { stdout } = await pm3Exec(Pm3Cmd.LF_T55XX_DETECT);
             const t55 = parseT55xxDetect(stdout);
             if (!t55) {
-                stopWithError(detectSpinner, "Card is not a writable T55x7. Use a blank T55x7 tag.");
+                stopWithError(detectSpinner, `Card is not a writable T55x7. Use a ${WriteTarget.LF}.`);
                 return false;
             }
             detectSpinner.stop(`Writable card detected (${t55.chipType})`);
@@ -86,6 +86,9 @@ export async function writeAndVerify(card: CardInfo): Promise<boolean> {
         const result = parseCloneResult(stdout);
         if (!result.success) {
             stopWithError(cloneSpinner, "Write command did not confirm success.");
+            if (freq === "HF") {
+                p.log.warn(`Make sure the target is a ${WriteTarget.HF} (Chinese magic backdoor).`);
+            }
             return false;
         }
         cloneSpinner.stop("Card data written");

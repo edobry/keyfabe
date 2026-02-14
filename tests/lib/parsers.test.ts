@@ -249,7 +249,16 @@ describe("parseCloneResult", () => {
         expect(result.success).toBe(true);
     });
 
-    it("detects failure when no done/written/cloned", () => {
+    it("detects success (verified) for hf mf csetuid", () => {
+        const output = `[+] old block 0... BD71CC03030804006263646566676869
+[+] new block 0... 01020304040804006263646566676869
+[+] Old UID... BD 71 CC 03
+[+] New UID... 01 02 03 04  ( verified )`;
+        const result = parseCloneResult(output);
+        expect(result.success).toBe(true);
+    });
+
+    it("detects failure when no done/written/cloned/verified", () => {
         const result = parseCloneResult("[+] some other output");
         expect(result.success).toBe(false);
     });
