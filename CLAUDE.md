@@ -2,6 +2,17 @@
 
 ## Workflow
 
+### Branching
+
+- **Work on feature branches**, not directly on `main`. This prevents pushes from triggering semantic-release mid-work and avoids local/remote divergence.
+  - Branch from `main`: `git checkout -b feat/short-description`
+  - Commit and push to the feature branch freely.
+  - When done, merge to `main` (or open a PR). The merge to `main` is the single event that triggers a release.
+- Branch naming: `feat/...`, `fix/...`, `refactor/...`, `docs/...` — matching the commit type.
+- **Pull `main` before branching**: Always `git pull --rebase` on `main` before creating a feature branch. This picks up any CI-generated release commits.
+
+### Committing
+
 - **Commit and push** after completing each logical unit of work, once lint/tests/build pass.
 - Don't wait for the user to ask — commit proactively when the work is done and verified.
 - **Housekeeping after feature work**: After completing a feature or significant change, proactively check and fix:
@@ -12,9 +23,28 @@
   - Stale docs or comments referencing old behavior?
   Don't wait to be asked — surface and fix these as part of finishing the work.
 
-## Commit Messages
+## Versioning (semantic-release)
 
-This repo uses **conventional commits** with **semantic-release** for automated versioning and publishing.
+This repo uses **conventional commits** with **semantic-release** for automated versioning and publishing. The version is a **derived artifact** — CI is the single source of truth.
+
+### How it works
+
+When a `feat:` or `fix:` commit lands on `main` (via merge or direct push), CI runs semantic-release, which:
+1. Analyzes commit messages since the last release to determine the next version
+2. Updates `package.json` version and `CHANGELOG.md`
+3. Creates a git tag and pushes a `chore(release)` commit back to `main`
+4. Publishes to npm
+
+This means **after a release-triggering merge to `main`, the remote advances by one commit** (the release commit). This is why we work on feature branches — it keeps your work isolated from CI's commits to `main`.
+
+### Rules
+
+- **Never manually edit** `version` in `package.json` — semantic-release owns it.
+- **Never manually edit** `CHANGELOG.md` — semantic-release generates it.
+- **Pull before starting new work** to pick up any release commits CI has pushed.
+- If a merge conflict involves the `version` field, **always take the remote's version**. Semantic-release will set the correct next version on the next release.
+
+### Commit message types
 
 Every commit message must follow this format:
 
