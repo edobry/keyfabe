@@ -66,6 +66,8 @@ export async function repair(): Promise<boolean> {
     // Step 2: Read block 0 with BCC bypass
     const readSpinner = p.spinner();
     readSpinner.start("Reading block 0 with anticollision bypass...");
+
+    let parsed: ReturnType<typeof parseBlock0>;
     try {
         const { stdout } = await pm3Exec(bccBypassReadCommand());
         const block0Hex = parseBlock0Data(stdout);
@@ -77,7 +79,7 @@ export async function repair(): Promise<boolean> {
             return false;
         }
 
-        const parsed = parseBlock0(block0Hex);
+        parsed = parseBlock0(block0Hex);
         if (!parsed) {
             readSpinner.stop("Block 0 data too short to parse.");
             return false;
@@ -97,23 +99,34 @@ export async function repair(): Promise<boolean> {
                 `UID: ${parsed.uid}, BCC: 0x${parsed.bcc.toString(16).padStart(2, "0").toUpperCase()} (expected 0x${expectedBcc.toString(16).padStart(2, "0").toUpperCase()})`,
             );
         }
-
-        // Step 3: Determine correct card type from SAK
-        let cardType: string;
-        if (parsed.sak === 0x18) {
-            cardType = CardType.MIFARE_CLASSIC_4K;
+    } catch (err) {
+        if (err instanceof Pm3Error) {
+            readSpinner.stop(err.message);
+            if (err.message.includes("not found")) {
+                printDoctorHint();
+            }
         } else {
-            cardType = CardType.MIFARE_CLASSIC_1K;
+            readSpinner.stop("Failed to read block 0.");
         }
+        return false;
+    }
 
-        // Step 4: Build corrected block 0 and write
-        const correctedBlock0 = buildBlock0(parsed.uid, cardType);
-        p.log.info(`Repairing: ${parsed.uid} as ${cardType}`);
-        p.log.info(`Corrected block 0: ${correctedBlock0}`);
+    // Step 3: Determine correct card type from SAK
+    let cardType: string;
+    if (parsed.sak === 0x18) {
+        cardType = CardType.MIFARE_CLASSIC_4K;
+    } else {
+        cardType = CardType.MIFARE_CLASSIC_1K;
+    }
 
-        const writeSpinner = p.spinner();
-        writeSpinner.start("Writing corrected block 0...");
+    // Step 4: Build corrected block 0 and write
+    const correctedBlock0 = buildBlock0(parsed.uid, cardType);
+    p.log.info(`Repairing: ${parsed.uid} as ${cardType}`);
+    p.log.info(`Corrected block 0: ${correctedBlock0}`);
 
+    const writeSpinner = p.spinner();
+    writeSpinner.start("Writing corrected block 0...");
+    try {
         const { stdout: writeOut } = await pm3Exec(bccRepairCommand(correctedBlock0));
         if (!/write\s*\(\s*ok\s*\)/i.test(writeOut)) {
             writeSpinner.stop("Write command did not confirm success.");
@@ -123,12 +136,12 @@ export async function repair(): Promise<boolean> {
         writeSpinner.stop("Corrected block 0 written.");
     } catch (err) {
         if (err instanceof Pm3Error) {
-            readSpinner.stop(err.message);
+            writeSpinner.stop(err.message);
             if (err.message.includes("not found")) {
                 printDoctorHint();
             }
         } else {
-            readSpinner.stop("Failed to read block 0.");
+            writeSpinner.stop("Failed to write corrected block 0.");
         }
         return false;
     }
