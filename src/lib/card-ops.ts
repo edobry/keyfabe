@@ -1,5 +1,5 @@
 import * as p from "@clack/prompts";
-import { CardType, cardFrequency, Pm3Cmd, WriteTarget } from "./constants.js";
+import { CardType, cardFrequency, Pm3Cmd, type Pm3Command, WriteTarget } from "./constants.js";
 import { printDoctorHint } from "./display.js";
 import { type CardInfo, parseCloneResult, parseHfSearch, parseLfSearch, parseT55xxDetect } from "./parsers.js";
 import { Pm3Error, pm3Exec } from "./pm3.js";
@@ -13,21 +13,21 @@ export async function searchCard(): Promise<CardInfo | null> {
     return parseHfSearch(hfOut);
 }
 
-function cloneCommand(card: CardInfo): string {
+function cloneCommand(card: CardInfo): Pm3Command {
     switch (card.type) {
         case CardType.EM410x:
-            return `lf em 410x clone --id ${card.id}`;
+            return Pm3Cmd.LF_EM_410X_CLONE.arg("--id", card.id);
         case CardType.HID_PROX:
-            return `lf hid clone -r ${card.id}`;
+            return Pm3Cmd.LF_HID_CLONE.arg("-r", card.id);
         case CardType.MIFARE_CLASSIC_1K:
         case CardType.MIFARE_CLASSIC_4K:
-            return `hf mf csetuid -u ${card.id}`;
+            return Pm3Cmd.HF_MF_CSETUID.arg("-u", card.id);
         default:
             throw new Error(`Unsupported card type: ${card.type}`);
     }
 }
 
-function verifyCommand(card: CardInfo): string {
+function verifyCommand(card: CardInfo): Pm3Command {
     switch (card.type) {
         case CardType.EM410x:
             return Pm3Cmd.LF_EM_410X_READER;

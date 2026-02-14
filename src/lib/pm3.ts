@@ -1,6 +1,7 @@
 import { execFile } from "node:child_process";
 import { readdir } from "node:fs/promises";
 import * as p from "@clack/prompts";
+import type { Pm3Command } from "./constants.js";
 
 const DEFAULT_TIMEOUT = 30_000;
 
@@ -20,9 +21,9 @@ export interface Pm3Result {
     stderr: string;
 }
 
-export async function pm3Exec(command: string, timeout = DEFAULT_TIMEOUT): Promise<Pm3Result> {
+export async function pm3Exec(command: Pm3Command, timeout = DEFAULT_TIMEOUT): Promise<Pm3Result> {
     return new Promise((resolve, reject) => {
-        const _proc = execFile("pm3", ["-c", command], { timeout }, (error, stdout, stderr) => {
+        const _proc = execFile("pm3", ["-c", command.toString()], { timeout }, (error, stdout, stderr) => {
             const out = stdout?.toString() ?? "";
             const err = stderr?.toString() ?? "";
             if (error) {
