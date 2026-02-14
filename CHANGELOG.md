@@ -1,3 +1,10 @@
+## [0.5.3](https://github.com/edobry/keyfabe/compare/v0.5.2...v0.5.3) (2026-02-14)
+
+
+### Bug Fixes
+
+* use correct hf mf csetuid syntax with -u flag ([7032c0b](https://github.com/edobry/keyfabe/commit/7032c0b9857a6b16da17e51936353b39bb99ee35))
+
 ## [0.5.2](https://github.com/edobry/keyfabe/compare/v0.5.1...v0.5.2) (2026-02-14)
 
 
