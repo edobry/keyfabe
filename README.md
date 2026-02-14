@@ -77,6 +77,9 @@ keyfabe export > fobs.json
 
 # import identities from a JSON file
 keyfabe import fobs.json
+
+# repair a bricked magic card (bad BCC/anticollision)
+keyfabe repair
 ```
 
 Commands that take `[name]` arguments are fully optional — when omitted, you'll get an interactive tag picker.
@@ -127,13 +130,19 @@ Exports all saved tag identities as JSON to stdout. Pipe to a file for backup: `
 
 Imports tag identities from a JSON file. New names are added, existing names are updated.
 
+### `keyfabe repair`
+
+Repairs a bricked magic card that has a corrupted block 0 (bad BCC, broken anticollision). Automates the recovery process: bypasses the broken anticollision, reads the current block 0, computes and writes the correct BCC, then verifies after power-cycle. See [Magic Card Reference](docs/magic-cards.md) for details.
+
 ## Supported Card Types
+
+For detailed information on magic card types, block 0 format, and recovery procedures, see the [Magic Card Reference](docs/magic-cards.md).
 
 | Type | Frequency | Read | Clone | Notes |
 |------|-----------|------|-------|-------|
 | EM410x | LF (125 kHz) | yes | yes | Most common LF tag |
 | HID Prox | LF (125 kHz) | yes | yes | Uses `lf hid clone` |
-| MIFARE Classic 1K/4K | HF (13.56 MHz) | yes | yes | Requires Gen1A magic card (`hf mf csetuid`) |
+| MIFARE Classic 1K/4K | HF (13.56 MHz) | yes | yes | Supports Gen1A and Gen2/CUID magic cards |
 | MIFARE Ultralight | HF (13.56 MHz) | yes | no | Read-only support |
 | MIFARE DESFire | HF (13.56 MHz) | yes | no | Read-only support |
 | ISO 14443-A | HF (13.56 MHz) | yes | no | Generic HF detection |
@@ -168,10 +177,12 @@ src/
     delete.ts           # delete saved identity
     export.ts           # export identities as JSON
     import.ts           # import identities from JSON
+    repair.ts           # repair bricked magic cards
   lib/
     pm3.ts              # spawns pm3 process, sends commands
     firmware.ts         # build/flash subprocess helpers
     parsers.ts          # parse pm3 output (card type, ID, voltages)
+    block0.ts           # MIFARE Classic block 0 utilities (BCC, builder)
     store.ts            # read/write ~/.keyfabe/fobs.json
     constants.ts        # shared card type and pm3 command constants
     card-ops.ts         # search, write-and-verify logic shared by commands

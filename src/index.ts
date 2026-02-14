@@ -10,6 +10,7 @@ import { importFile } from "./commands/import.js";
 import { list } from "./commands/list.js";
 import { read } from "./commands/read.js";
 import { rename } from "./commands/rename.js";
+import { repair } from "./commands/repair.js";
 import { setup } from "./commands/setup.js";
 import { show } from "./commands/show.js";
 import { write } from "./commands/write.js";
@@ -123,5 +124,10 @@ program
     .action(withExitCode(importFile));
 
 program.command("setup").description("Flash Iceman firmware to a stock Proxmark3 Easy").action(withExitCode(setup));
+
+program
+    .command("repair")
+    .description("Repair a bricked magic card with corrupted block 0 (bad BCC)")
+    .action(withExitCode(repair));
 
 program.parse();

@@ -1,4 +1,4 @@
-import { CardType } from "./constants.js";
+import { CardType, MagicCardType, type MagicCardTypeName } from "./constants.js";
 
 export interface HwStatus {
     connected: boolean;
@@ -109,6 +109,19 @@ export function parseHfSearch(output: string): CardInfo | null {
     }
 
     return { type, id: uid };
+}
+
+export function parseMagicType(output: string): MagicCardTypeName {
+    if (/Gen\s*1\s*a|magic\s*backdoor/i.test(output)) return MagicCardType.GEN1A;
+    if (/Gen\s*2|CUID/i.test(output)) return MagicCardType.GEN2_CUID;
+    return MagicCardType.UNKNOWN;
+}
+
+export function parseBlock0Data(output: string): string | null {
+    // Matches rdbl output: "0 | 81 54 98 C5 88 08 04 00 ..."
+    const match = output.match(/\|\s*([0-9A-Fa-f]{2}(?:\s+[0-9A-Fa-f]{2}){15})\s*\|/);
+    if (!match) return null;
+    return match[1].replace(/\s+/g, "").toUpperCase();
 }
 
 export function parseCloneResult(output: string): CloneResult {

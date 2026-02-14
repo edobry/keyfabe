@@ -96,27 +96,49 @@ describe("writeAndVerify", () => {
         expect(await writeAndVerify(emCard)).toBe(false);
     });
 
-    it("HF: MIFARE Classic 1K write succeeds and verifies → true", async () => {
+    it("HF Gen1A: MIFARE Classic 1K write succeeds and verifies → true", async () => {
         const mifareCard = { type: "MIFARE Classic 1K", id: "DEADBEEF" };
 
-        // No T55x7 detect for HF — goes straight to clone
-        mockPm3Exec.mockResolvedValueOnce({ stdout: "[+] Done", stderr: "" }).mockResolvedValueOnce({
-            stdout: "[+]  UID: DE AD BE EF\n[+] MIFARE Classic EV1 1K",
-            stderr: "",
-        });
+        // Step 1: detect magic type (hf search)
+        mockPm3Exec
+            .mockResolvedValueOnce({ stdout: "[+] Magic capabilities... Gen 1a", stderr: "" })
+            // Step 2: clone (csetuid)
+            .mockResolvedValueOnce({ stdout: "[+] Done", stderr: "" })
+            // Step 3: verify (hf search)
+            .mockResolvedValueOnce({
+                stdout: "[+]  UID: DE AD BE EF\n[+] MIFARE Classic EV1 1K",
+                stderr: "",
+            });
 
         expect(await writeAndVerify(mifareCard)).toBe(true);
-        // Should have called pm3Exec twice (clone + verify), no T55x7 detect
-        expect(mockPm3Exec).toHaveBeenCalledTimes(2);
+        expect(mockPm3Exec).toHaveBeenCalledTimes(3);
+    });
+
+    it("HF Gen2: MIFARE Classic 1K write succeeds and verifies → true", async () => {
+        const mifareCard = { type: "MIFARE Classic 1K", id: "DEADBEEF" };
+
+        mockPm3Exec
+            .mockResolvedValueOnce({ stdout: "[+] Magic capabilities... Gen 2 / CUID", stderr: "" })
+            .mockResolvedValueOnce({ stdout: "[+] Write ( ok )", stderr: "" })
+            .mockResolvedValueOnce({
+                stdout: "[+]  UID: DE AD BE EF\n[+] MIFARE Classic EV1 1K",
+                stderr: "",
+            });
+
+        expect(await writeAndVerify(mifareCard)).toBe(true);
+        expect(mockPm3Exec).toHaveBeenCalledTimes(3);
     });
 
     it("HF: MIFARE Classic 4K write succeeds → true", async () => {
         const mifare4kCard = { type: "MIFARE Classic 4K", id: "01020304" };
 
-        mockPm3Exec.mockResolvedValueOnce({ stdout: "[+] Done", stderr: "" }).mockResolvedValueOnce({
-            stdout: "[+]  UID: 01 02 03 04\n[+] MIFARE Classic 4K",
-            stderr: "",
-        });
+        mockPm3Exec
+            .mockResolvedValueOnce({ stdout: "[+] Magic capabilities... Gen 1a", stderr: "" })
+            .mockResolvedValueOnce({ stdout: "[+] Done", stderr: "" })
+            .mockResolvedValueOnce({
+                stdout: "[+]  UID: 01 02 03 04\n[+] MIFARE Classic 4K",
+                stderr: "",
+            });
 
         expect(await writeAndVerify(mifare4kCard)).toBe(true);
     });
@@ -128,13 +150,24 @@ describe("writeAndVerify", () => {
         expect(mockPm3Exec).not.toHaveBeenCalled();
     });
 
+    it("HF: unknown magic type → false", async () => {
+        const mifareCard = { type: "MIFARE Classic 1K", id: "DEADBEEF" };
+
+        mockPm3Exec.mockResolvedValueOnce({ stdout: "[+] Valid ISO 14443-A tag found", stderr: "" });
+
+        expect(await writeAndVerify(mifareCard)).toBe(false);
+    });
+
     it("HF: MIFARE Classic verify mismatch → false", async () => {
         const mifareCard = { type: "MIFARE Classic 1K", id: "DEADBEEF" };
 
-        mockPm3Exec.mockResolvedValueOnce({ stdout: "[+] Done", stderr: "" }).mockResolvedValueOnce({
-            stdout: "[+]  UID: AA BB CC DD\n[+] MIFARE Classic EV1 1K",
-            stderr: "",
-        });
+        mockPm3Exec
+            .mockResolvedValueOnce({ stdout: "[+] Magic capabilities... Gen 1a", stderr: "" })
+            .mockResolvedValueOnce({ stdout: "[+] Done", stderr: "" })
+            .mockResolvedValueOnce({
+                stdout: "[+]  UID: AA BB CC DD\n[+] MIFARE Classic EV1 1K",
+                stderr: "",
+            });
 
         expect(await writeAndVerify(mifareCard)).toBe(false);
     });

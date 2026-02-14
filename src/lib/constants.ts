@@ -22,8 +22,16 @@ export function cardFrequency(type: string): "LF" | "HF" {
 
 export const WriteTarget = {
     LF: "blank T55x7 tag",
-    HF: "Gen1A magic card",
+    HF: "magic card (Gen1A or Gen2/CUID)",
 } as const;
+
+export const MagicCardType = {
+    GEN1A: "Gen1A",
+    GEN2_CUID: "Gen2/CUID",
+    UNKNOWN: "unknown",
+} as const;
+
+export type MagicCardTypeName = (typeof MagicCardType)[keyof typeof MagicCardType];
 
 export class Pm3Command {
     readonly parts: readonly string[];
@@ -42,6 +50,16 @@ export class Pm3Command {
         return value !== undefined ? new Pm3Command(...this.parts, flag, value) : new Pm3Command(...this.parts, flag);
     }
 
+    /** Chain multiple commands into a single pm3 session (separated by `;`). */
+    static chain(...commands: Pm3Command[]): Pm3Command {
+        const parts: string[] = [];
+        for (let i = 0; i < commands.length; i++) {
+            if (i > 0) parts.push(";");
+            parts.push(...commands[i].parts);
+        }
+        return new Pm3Command(...parts);
+    }
+
     toString(): string {
         return this.parts.join(" ");
     }
@@ -56,6 +74,8 @@ const em410x = lf.sub("em").sub("410x");
 const hid = lf.sub("hid");
 const mf = hf.sub("mf");
 
+const hf14a = hf.sub("14a");
+
 export const Pm3Cmd = {
     LF_SEARCH: lf.sub("search"),
     HF_SEARCH: hf.sub("search"),
@@ -65,6 +85,9 @@ export const Pm3Cmd = {
     LF_HID_READER: hid.sub("reader"),
     LF_HID_CLONE: hid.sub("clone"),
     HF_MF_CSETUID: mf.sub("csetuid"),
+    HF_MF_WRBL: mf.sub("wrbl"),
+    HF_MF_RDBL: mf.sub("rdbl"),
+    HF_14A_CONFIG: hf14a.sub("config"),
     HW_STATUS: hw.sub("status"),
     HW_TUNE: hw.sub("tune"),
 } as const;

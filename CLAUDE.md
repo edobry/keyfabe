@@ -84,11 +84,22 @@ Use the type that best describes the change. Only `feat` and `fix` trigger npm r
 - Avoid duplication — use shared modules in `src/lib/` and shared test helpers in `tests/helpers/`.
 - **User-facing strings** (card type names, pm3 commands, target card descriptions) live in `src/lib/constants.ts`. When adding new user-facing text that appears in more than one place, add it to constants first, don't duplicate inline strings.
 
+## Hardware & Protocol Knowledge
+
+This project interacts with real RFID hardware. Protocol-level knowledge (card types, command formats, byte layouts, failure modes) is hard-won through testing and should be preserved.
+
+- **Document learnings in `docs/`** whenever working with hardware protocols reveals non-obvious behavior — byte order issues, card type quirks, recovery procedures, etc.
+- Reference docs exist:
+  - `docs/magic-cards.md` — magic card types, block 0 format, BCC calculation, ATQA byte order, recovery procedures
+- When adding support for new card types or write methods, update the relevant doc alongside the code.
+- If a hardware interaction fails in an unexpected way, document the root cause and fix in the appropriate doc before moving on.
+
 ## Maintaining These Instructions
 
 These instructions are a living document. Update CLAUDE.md as part of the work whenever:
 - A new pattern or convention is established (e.g., a new shared module, a new constant category)
 - A mistake reveals a gap in the instructions (e.g., missing workflow step, unclear rule)
 - A decision is made about how something should be done going forward
+- Hardware/protocol testing reveals non-obvious behavior that should be documented in `docs/`
 
 Don't wait until the end — update the instructions at the point the learning happens, in the same commit or branch as the related work.

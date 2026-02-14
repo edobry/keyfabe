@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+    parseBlock0Data,
     parseCloneResult,
     parseHfSearch,
     parseHwStatus,
     parseHwTune,
     parseLfSearch,
+    parseMagicType,
     parseT55xxDetect,
 } from "../../src/lib/parsers.js";
 
@@ -261,5 +263,42 @@ describe("parseCloneResult", () => {
     it("detects failure when no done/written/cloned/verified", () => {
         const result = parseCloneResult("[+] some other output");
         expect(result.success).toBe(false);
+    });
+});
+
+describe("parseMagicType", () => {
+    it("detects Gen1A", () => {
+        expect(parseMagicType("[+] Magic capabilities... Gen 1a")).toBe("Gen1A");
+    });
+
+    it("detects Gen1A from backdoor text", () => {
+        expect(parseMagicType("[+] magic backdoor detected")).toBe("Gen1A");
+    });
+
+    it("detects Gen2/CUID", () => {
+        expect(parseMagicType("[+] Magic capabilities... Gen 2 / CUID")).toBe("Gen2/CUID");
+    });
+
+    it("detects CUID keyword", () => {
+        expect(parseMagicType("[+] CUID card detected")).toBe("Gen2/CUID");
+    });
+
+    it("returns unknown for unrecognized output", () => {
+        expect(parseMagicType("[+] Valid ISO 14443-A tag found")).toBe("unknown");
+    });
+});
+
+describe("parseBlock0Data", () => {
+    it("parses rdbl output", () => {
+        const output = `
+[=]   # | sector 00 / 0x00                                | ascii
+[=] ----+-------------------------------------------------+-----------------
+[=]   0 | 81 54 98 C5 88 08 04 00 00 00 00 00 00 00 00 00 | .T..............
+        `;
+        expect(parseBlock0Data(output)).toBe("815498C5880804000000000000000000");
+    });
+
+    it("returns null for non-matching output", () => {
+        expect(parseBlock0Data("[!] Auth error")).toBeNull();
     });
 });

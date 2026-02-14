@@ -1,7 +1,15 @@
 import * as p from "@clack/prompts";
-import { CardType, cardFrequency, Pm3Cmd, type Pm3Command, WriteTarget } from "./constants.js";
+import { buildBlock0 } from "./block0.js";
+import { CardType, cardFrequency, MagicCardType, Pm3Cmd, type Pm3Command, WriteTarget } from "./constants.js";
 import { printDoctorHint } from "./display.js";
-import { type CardInfo, parseCloneResult, parseHfSearch, parseLfSearch, parseT55xxDetect } from "./parsers.js";
+import {
+    type CardInfo,
+    parseCloneResult,
+    parseHfSearch,
+    parseLfSearch,
+    parseMagicType,
+    parseT55xxDetect,
+} from "./parsers.js";
 import { Pm3Error, pm3Exec } from "./pm3.js";
 
 export async function searchCard(): Promise<CardInfo | null> {
@@ -13,7 +21,22 @@ export async function searchCard(): Promise<CardInfo | null> {
     return parseHfSearch(hfOut);
 }
 
-function cloneCommand(card: CardInfo): Pm3Command {
+/** Detect magic card type by running hf search and parsing capabilities. */
+export async function detectMagicType(): Promise<string> {
+    const { stdout } = await pm3Exec(Pm3Cmd.HF_SEARCH);
+    return parseMagicType(stdout);
+}
+
+function gen1aCloneCommand(card: CardInfo): Pm3Command {
+    return Pm3Cmd.HF_MF_CSETUID.arg("-u", card.id);
+}
+
+function gen2CloneCommand(card: CardInfo): Pm3Command {
+    const block0 = buildBlock0(card.id, card.type);
+    return Pm3Cmd.HF_MF_WRBL.arg("--blk", "0").arg("-k", "FFFFFFFFFFFF").arg("-d", block0).arg("--force");
+}
+
+function cloneCommand(card: CardInfo, magicType?: string): Pm3Command {
     switch (card.type) {
         case CardType.EM410x:
             return Pm3Cmd.LF_EM_410X_CLONE.arg("--id", card.id);
@@ -21,10 +44,21 @@ function cloneCommand(card: CardInfo): Pm3Command {
             return Pm3Cmd.LF_HID_CLONE.arg("-r", card.id);
         case CardType.MIFARE_CLASSIC_1K:
         case CardType.MIFARE_CLASSIC_4K:
-            return Pm3Cmd.HF_MF_CSETUID.arg("-u", card.id);
+            if (magicType === MagicCardType.GEN2_CUID) {
+                return gen2CloneCommand(card);
+            }
+            return gen1aCloneCommand(card);
         default:
             throw new Error(`Unsupported card type: ${card.type}`);
     }
+}
+
+/** Match clone result patterns for Gen2 wrbl output (e.g. "Write ( ok )"). */
+function isWriteSuccess(stdout: string, magicType?: string): boolean {
+    if (magicType === MagicCardType.GEN2_CUID) {
+        return /write\s*\(\s*ok\s*\)/i.test(stdout);
+    }
+    return parseCloneResult(stdout).success;
 }
 
 function verifyCommand(card: CardInfo): Pm3Command {
@@ -77,17 +111,41 @@ export async function writeAndVerify(card: CardInfo): Promise<boolean> {
         }
     }
 
+    // Detect magic card type (HF only)
+    let magicType: string | undefined;
+    if (freq === "HF") {
+        const magicSpinner = p.spinner();
+        magicSpinner.start("Detecting magic card type...");
+        try {
+            magicType = await detectMagicType();
+            if (magicType === MagicCardType.UNKNOWN) {
+                stopWithError(magicSpinner, `Target is not a recognized magic card. Use a ${WriteTarget.HF}.`);
+                return false;
+            }
+            magicSpinner.stop(`Magic card detected (${magicType})`);
+        } catch (err) {
+            if (err instanceof Pm3Error) {
+                stopWithError(magicSpinner, err.message);
+                if (err.message.includes("not found")) {
+                    printDoctorHint();
+                }
+            } else {
+                stopWithError(magicSpinner, "Failed to detect magic card type.");
+            }
+            return false;
+        }
+    }
+
     // Clone
     const cloneSpinner = p.spinner();
     cloneSpinner.start("Writing card data...");
     try {
-        const cmd = cloneCommand(card);
+        const cmd = cloneCommand(card, magicType);
         const { stdout } = await pm3Exec(cmd);
-        const result = parseCloneResult(stdout);
-        if (!result.success) {
+        if (!isWriteSuccess(stdout, magicType)) {
             stopWithError(cloneSpinner, "Write command did not confirm success.");
             if (freq === "HF") {
-                p.log.warn(`Make sure the target is a ${WriteTarget.HF} (Chinese magic backdoor).`);
+                p.log.warn(`Make sure the target is a ${WriteTarget.HF}.`);
             }
             return false;
         }
