@@ -1,3 +1,10 @@
+# [0.6.0](https://github.com/edobry/keyfabe/compare/v0.5.3...v0.6.0) (2026-02-14)
+
+
+### Features
+
+* add Gen2/CUID magic card support and repair command ([4039a8a](https://github.com/edobry/keyfabe/commit/4039a8a6116b0209d8f0eba0e27387cbaed90af6))
+
 ## [0.5.3](https://github.com/edobry/keyfabe/compare/v0.5.2...v0.5.3) (2026-02-14)
 
 
