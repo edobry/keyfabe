@@ -62,6 +62,15 @@ describe("Pm3Command", () => {
         const cmd = new Pm3Command("hf").sub("mf").sub("csetuid").arg("-u", "DEADBEEF").arg("--verbose");
         expect(cmd.toString()).toBe("hf mf csetuid -u DEADBEEF --verbose");
     });
+
+    it("chain() joins commands with semicolons", () => {
+        const config = new Pm3Command("hf").sub("14a").sub("config").arg("--bcc", "ignore");
+        const read = new Pm3Command("hf").sub("mf").sub("rdbl").arg("--blk", "0");
+        const reset = new Pm3Command("hf").sub("14a").sub("config").arg("--std");
+
+        const chained = Pm3Command.chain(config, read, reset);
+        expect(chained.toString()).toBe("hf 14a config --bcc ignore ; hf mf rdbl --blk 0 ; hf 14a config --std");
+    });
 });
 
 describe("pm3Exec", () => {

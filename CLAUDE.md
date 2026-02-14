@@ -94,6 +94,15 @@ This project interacts with real RFID hardware. Protocol-level knowledge (card t
 - When adding support for new card types or write methods, update the relevant doc alongside the code.
 - If a hardware interaction fails in an unexpected way, document the root cause and fix in the appropriate doc before moving on.
 
+## Quality & Coverage
+
+After completing any feature, fix, or refactor, proactively check for:
+- **Test coverage gaps**: Every source file in `src/` should have a corresponding test file in `tests/`. Every public function and code path should be tested. If you add a new file, add its tests in the same branch.
+- **Code quality issues**: Shared try/catch blocks covering unrelated spinners/resources, unreachable code, unused imports, missing error handling at system boundaries.
+- **Consistency**: New code should follow the same patterns as existing code (mock setup, assertion style, constant usage).
+
+Don't wait to be asked — identify and fix these as part of finishing the work.
+
 ## Maintaining These Instructions
 
 These instructions are a living document. Update CLAUDE.md as part of the work whenever:
