@@ -82,3 +82,13 @@ Use the type that best describes the change. Only `feat` and `fix` trigger npm r
 - Biome handles formatting and linting (see `biome.json`). Run `npx biome check --write` to auto-fix.
 - ESM modules with `.js` extensions in imports.
 - Avoid duplication — use shared modules in `src/lib/` and shared test helpers in `tests/helpers/`.
+- **User-facing strings** (card type names, pm3 commands, target card descriptions) live in `src/lib/constants.ts`. When adding new user-facing text that appears in more than one place, add it to constants first, don't duplicate inline strings.
+
+## Maintaining These Instructions
+
+These instructions are a living document. Update CLAUDE.md as part of the work whenever:
+- A new pattern or convention is established (e.g., a new shared module, a new constant category)
+- A mistake reveals a gap in the instructions (e.g., missing workflow step, unclear rule)
+- A decision is made about how something should be done going forward
+
+Don't wait until the end — update the instructions at the point the learning happens, in the same commit or branch as the related work.
