@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { createRequire } from "node:module";
 import * as p from "@clack/prompts";
 import { program } from "commander";
 import { clone } from "./commands/clone.js";
@@ -13,6 +14,9 @@ import { setup } from "./commands/setup.js";
 import { show } from "./commands/show.js";
 import { write } from "./commands/write.js";
 
+const require = createRequire(import.meta.url);
+const { version } = require("../package.json");
+
 function withExitCode(fn: (...args: any[]) => Promise<boolean>) {
     return async (...args: any[]) => {
         const ok = await fn(...args);
@@ -20,7 +24,7 @@ function withExitCode(fn: (...args: any[]) => Promise<boolean>) {
     };
 }
 
-program.name("keyfabe").description("CLI tool for Proxmark3 tag cloning").version("0.1.0");
+program.name("keyfabe").description("CLI tool for Proxmark3 tag cloning").version(version);
 
 program.action(
     withExitCode(async () => {
