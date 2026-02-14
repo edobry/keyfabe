@@ -1,3 +1,10 @@
+## [0.7.1](https://github.com/edobry/keyfabe/compare/v0.7.0...v0.7.1) (2026-02-14)
+
+
+### Bug Fixes
+
+* detect bricked cards during write and suggest repair command ([1db7455](https://github.com/edobry/keyfabe/commit/1db7455a1e6bb5d1201f30431e436bae4ce46bc3))
+
 # [0.7.0](https://github.com/edobry/keyfabe/compare/v0.6.0...v0.7.0) (2026-02-14)
 
 
