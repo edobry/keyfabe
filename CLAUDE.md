@@ -94,6 +94,15 @@ This project interacts with real RFID hardware. Protocol-level knowledge (card t
 - When adding support for new card types or write methods, update the relevant doc alongside the code.
 - If a hardware interaction fails in an unexpected way, document the root cause and fix in the appropriate doc before moving on.
 
+## Reporting Outcomes
+
+When finishing a task, report outcomes **in terms of the user's requirements**, not implementation details. If the user provided a plan with specific scenarios, expected behaviors, or acceptance criteria, the summary must map back to those directly.
+
+- **Lead with a scenario-by-scenario outcome table** when the task defined specific user-facing behaviors or error cases. Each row should show: the scenario, the expected behavior, whether it was achieved, and which test covers it.
+- **Implementation details are secondary.** Files changed, functions added, and lines modified are supporting evidence — not the headline. The user needs to evaluate "did I get what I asked for?" not "what files were touched?"
+- **Call out anything that deviates from the plan** — scenarios that weren't implemented, behaviors that differ from what was specified, or edge cases discovered during implementation.
+- **Include verification status**: lint/test/build pass counts.
+
 ## Quality & Coverage
 
 After completing any feature, fix, or refactor, proactively check for:
