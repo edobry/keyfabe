@@ -1,3 +1,10 @@
+# [0.4.0](https://github.com/edobry/keyfabe/compare/v0.3.0...v0.4.0) (2026-02-14)
+
+
+### Features
+
+* add HF (13.56 MHz) card detection for MIFARE and ISO 14443-A ([34fe026](https://github.com/edobry/keyfabe/commit/34fe026db8443dea3d86b13055620c836b40bbc9))
+
 # [0.3.0](https://github.com/edobry/keyfabe/compare/v0.2.0...v0.3.0) (2026-02-10)
 
 
