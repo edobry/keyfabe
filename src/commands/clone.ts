@@ -1,6 +1,6 @@
 import * as p from "@clack/prompts";
 import { searchCard, writeAndVerify } from "../lib/card-ops.js";
-import { cardFrequency } from "../lib/constants.js";
+import { cardFrequency, WriteTarget } from "../lib/constants.js";
 import { printCardInfo, printDoctorHint } from "../lib/display.js";
 import type { CardInfo } from "../lib/parsers.js";
 import { Pm3Error, requireDevice } from "../lib/pm3.js";
@@ -59,11 +59,7 @@ export async function clone(): Promise<boolean> {
 
     // Step 2: Write to blank
     const freq = cardFrequency(card.type);
-    if (freq === "LF") {
-        await waitForEnter("Remove original and place a blank T55x7 tag on the antenna.");
-    } else {
-        await waitForEnter("Remove original and place the target tag on the antenna.");
-    }
+    await waitForEnter(`Remove original and place a ${WriteTarget[freq]} on the antenna.`);
 
     const success = await writeAndVerify(card);
 

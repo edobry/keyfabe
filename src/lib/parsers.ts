@@ -113,6 +113,7 @@ export function parseHfSearch(output: string): CardInfo | null {
 
 export function parseCloneResult(output: string): CloneResult {
     const hasError = /error/i.test(output) && !/errorrate/i.test(output);
-    const hasDone = /done/i.test(output) || /written/i.test(output) || /cloned/i.test(output);
+    const hasDone =
+        /done/i.test(output) || /written/i.test(output) || /cloned/i.test(output) || /verified/i.test(output);
     return { success: !hasError && hasDone };
 }
