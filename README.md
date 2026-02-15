@@ -99,7 +99,10 @@ Interactive wizard for flashing Iceman firmware to a stock Proxmark3 Easy. Handl
 
 ### `keyfabe clone`
 
-Guided clone flow: reads the original tag (LF and HF), writes the ID to a blank card, and verifies the readback. Optionally saves the identity for later use.
+Guided clone flow: reads the original tag (LF and HF), writes to a blank card, and verifies the readback. Optionally saves the identity for later use.
+
+- **LF cards** (EM410x, HID Prox): writes the UID to a blank T55x7
+- **MIFARE Classic**: full-card clone — automatically cracks all sector keys, dumps all blocks, and restores them onto a magic card. Supports standard chips via `autopwn` and FM11RF08S chips via automatic fallback recovery (~28 min)
 
 ### `keyfabe read`
 
@@ -107,7 +110,7 @@ Reads and identifies whatever tag is on the antenna. Searches LF first, then fal
 
 ### `keyfabe write [name]`
 
-Writes a previously-saved identity to a blank tag. Without a name, presents an interactive picker.
+Writes a previously-saved identity to a blank tag. Without a name, presents an interactive picker. For MIFARE Classic identities with a saved full-card dump, restores all blocks (not just UID).
 
 ### `keyfabe verify [name]`
 
@@ -149,7 +152,7 @@ For detailed information on magic card types, block 0 format, and recovery proce
 |------|-----------|------|-------|-------|
 | EM410x | LF (125 kHz) | yes | yes | Most common LF tag |
 | HID Prox | LF (125 kHz) | yes | yes | Uses `lf hid clone` |
-| MIFARE Classic 1K/4K | HF (13.56 MHz) | yes | yes | Supports Gen1A and Gen2/CUID magic cards |
+| MIFARE Classic 1K/4K | HF (13.56 MHz) | yes | yes | Full-card clone (all sectors + keys) to Gen1A or Gen2/CUID magic cards |
 | MIFARE Ultralight | HF (13.56 MHz) | yes | no | Read-only support |
 | MIFARE DESFire | HF (13.56 MHz) | yes | no | Read-only support |
 | ISO 14443-A | HF (13.56 MHz) | yes | no | Generic HF detection |
@@ -194,6 +197,7 @@ src/
     store.ts            # read/write ~/.keyfabe/fobs.json
     constants.ts        # shared card type and pm3 command constants
     card-ops.ts         # search, write-and-verify logic shared by commands
+    mf-ops.ts           # MIFARE Classic full-card operations (crack, dump, restore)
     display.ts          # shared display helpers and constants
     prompts.ts          # interactive user prompts
 ```

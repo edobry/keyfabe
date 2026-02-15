@@ -3,3 +3,7 @@ dist/
 .claude/
 .DS_Store
 demo.tape
+
+# Proxmark3 dump/key artifacts
+*.bin
+*.eml
