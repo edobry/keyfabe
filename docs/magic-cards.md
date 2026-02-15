@@ -136,6 +136,69 @@ pm3 -c "hf mf wrbl --blk 0 -k FFFFFFFFFFFF -d 815498C5880804000000000000000000 -
 - Writing incorrect ATQA byte order will also brick anticollision
 - The card must be power-cycled (removed and replaced) after block 0 write for changes to take effect
 
+## Full-Card Cloning (Sector Data)
+
+UID-only cloning (block 0) is sufficient for access control systems that identify cards solely by UID. However, **payment and value-storage systems** (e.g., laundry machines) authenticate to specific sectors and read/write application data. These systems require a full-card clone — all 64 blocks including sector keys, access bits, and data.
+
+### When You Need Full-Card Cloning
+
+- Card reader says "unrecognized format" after a UID-only clone
+- The system stores value/balance on the card (laundry, vending, transit)
+- The system uses custom sector keys (not default `FFFFFFFFFFFF`)
+- Block 1 of sector 0 contains application identifiers (e.g., `UINHOUSELAU` for a Mitech laundry system)
+
+### Procedure
+
+**Step 1: Crack sector keys** — Use `hf mf autopwn` first. If that fails (common with hardened chips), identify the chip type from the error:
+
+| Error | Chip Type | Recovery Method |
+|-------|-----------|----------------|
+| `Static encrypted nonce detected` | FM11RF08S | `script run fm11rf08s_recovery` |
+| `Tag isn't vulnerable to Nested Attack` | MIFARE Classic EV1 | Try `hf mf hardnested`, then `fm11rf08s_recovery` |
+| `Darkside attack failed` | Hardened Classic | Try dictionary first (`autopwn -f mfc_default_keys`) |
+
+**Step 2: Dump all blocks** — Once keys are known:
+```sh
+pm3 -c "hf mf dump --1k -k hf-mf-<UID>-key.bin"
+```
+
+**Step 3: Restore to magic card** — Place a blank CUID/Gen1A card on the reader:
+```sh
+pm3 -c "hf mf restore --1k -f hf-mf-<UID>-dump -k hf-mf-<UID>-key.bin --force"
+```
+
+Do **not** use `--ka` — that flag tells restore to authenticate with the dump's keys, but the blank target card has default keys (`FFFFFFFFFFFF`). The `-k` flag provides the keys to write into sector trailers; authentication uses the default key.
+
+**Step 4: Power-cycle and verify** — Remove the card, replace it, then dump again and compare:
+```sh
+pm3 -c "hf mf dump --1k -k hf-mf-<UID>-key.bin"
+diff <(xxd original-dump.bin) <(xxd clone-dump.bin)  # should show no differences
+```
+
+### FM11RF08S Chips
+
+FM11RF08S is a Chinese MIFARE Classic clone with enhanced security (static encrypted nonces). These chips are increasingly common in commercial card systems.
+
+Key characteristics:
+- Standard `hf mf autopwn` fails — darkside, nested, and hardnested attacks all blocked
+- `hf mf staticnested` may report "normal nonce" despite the card using static nonces — this is inconsistent behavior
+- The `fm11rf08s_recovery` Python script is the reliable recovery method (~28 minutes for a 1K card)
+- The script recovers keys for all 16 user sectors plus a hidden "sector 32" (backdoor key)
+- Once keys are recovered, standard `dump`/`restore` commands work normally
+
+### MIFARE Classic Value Blocks
+
+Sector 4 in many payment systems uses the MIFARE Classic value block format:
+
+```
+Bytes:  value (4B LE) | ~value (4B) | value (4B LE) | addr | ~addr | addr | ~addr
+```
+
+Example: `7E 04 00 00 81 FB FF FF 7E 04 00 00 00 FF 00 FF`
+- Value: `0x0000047E` = 1150 (little-endian)
+- `~value`: `0xFFFFFB81` = bitwise complement (integrity check)
+- Third copy: redundant copy for error recovery
+
 ## Recovery: BCC-Bricked CUID Cards
 
 If a Gen2/CUID card has an incorrect BCC in block 0, standard commands cannot select it. Recovery is possible using the pm3's anticollision bypass:
