@@ -1,12 +1,16 @@
 import { describe, expect, it } from "vitest";
 import {
+    parseAutopwn,
     parseBlock0Data,
     parseCloneResult,
+    parseDump,
+    parseFm11rf08sRecovery,
     parseHfSearch,
     parseHwStatus,
     parseHwTune,
     parseLfSearch,
     parseMagicType,
+    parseRestore,
     parseT55xxDetect,
 } from "../../src/lib/parsers.js";
 
@@ -308,5 +312,93 @@ describe("parseBlock0Data", () => {
 
     it("returns null for non-matching output", () => {
         expect(parseBlock0Data("[!] Auth error")).toBeNull();
+    });
+});
+
+describe("parseAutopwn", () => {
+    it("success with key file path", () => {
+        const output = `[+] Found keys have been saved to file hf-mf-DEADBEEF-key.bin`;
+        const result = parseAutopwn(output);
+        expect(result.success).toBe(true);
+        expect(result.keyFile).toBe("hf-mf-DEADBEEF-key.bin");
+        expect(result.staticNonce).toBe(false);
+    });
+
+    it("success with 'saved to' format", () => {
+        const output = `[+] keys saved to /tmp/hf-mf-01020304-key.bin`;
+        const result = parseAutopwn(output);
+        expect(result.success).toBe(true);
+        expect(result.keyFile).toBe("/tmp/hf-mf-01020304-key.bin");
+        expect(result.staticNonce).toBe(false);
+    });
+
+    it("failure with static nonce detection", () => {
+        const output = `[!] static encrypted nonce detected — this card uses a proprietary PRNG`;
+        const result = parseAutopwn(output);
+        expect(result.success).toBe(false);
+        expect(result.staticNonce).toBe(true);
+    });
+
+    it("failure without static nonce", () => {
+        const output = `[!] No keys were recovered. Try a different attack.`;
+        const result = parseAutopwn(output);
+        expect(result.success).toBe(false);
+        expect(result.keyFile).toBeNull();
+        expect(result.staticNonce).toBe(false);
+    });
+});
+
+describe("parseDump", () => {
+    it("success with file path", () => {
+        const output = `[+] saved 64 blocks to file hf-mf-DEADBEEF-dump.bin`;
+        const result = parseDump(output);
+        expect(result.success).toBe(true);
+        expect(result.dumpFile).toBe("hf-mf-DEADBEEF-dump.bin");
+    });
+
+    it("failure", () => {
+        const output = `[!] Error dumping card data`;
+        const result = parseDump(output);
+        expect(result.success).toBe(false);
+        expect(result.dumpFile).toBeNull();
+    });
+});
+
+describe("parseRestore", () => {
+    it("all blocks ok", () => {
+        const output = `[+] Restored 64 blocks. Done.`;
+        const result = parseRestore(output);
+        expect(result.success).toBe(true);
+        expect(result.failedBlocks).toBe(0);
+    });
+
+    it("some blocks failed", () => {
+        const output = `[+] Done. 3 blocks failed to write.`;
+        const result = parseRestore(output);
+        expect(result.success).toBe(false);
+        expect(result.failedBlocks).toBe(3);
+    });
+
+    it("error in output", () => {
+        const output = `[!] Error restoring card`;
+        const result = parseRestore(output);
+        expect(result.success).toBe(false);
+        expect(result.failedBlocks).toBe(0);
+    });
+});
+
+describe("parseFm11rf08sRecovery", () => {
+    it("success with key file", () => {
+        const output = `[+] FM11RF08S recovery complete. Keys saved to hf-mf-AABBCCDD-key.bin`;
+        const result = parseFm11rf08sRecovery(output);
+        expect(result.success).toBe(true);
+        expect(result.keyFile).toBe("hf-mf-AABBCCDD-key.bin");
+    });
+
+    it("failure", () => {
+        const output = `[!] Recovery failed — could not determine backdoor key`;
+        const result = parseFm11rf08sRecovery(output);
+        expect(result.success).toBe(false);
+        expect(result.keyFile).toBeNull();
     });
 });

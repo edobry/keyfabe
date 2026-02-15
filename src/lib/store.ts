@@ -12,6 +12,7 @@ export interface Fob {
     type: string;
     id: string;
     encoding?: string;
+    dumpFile?: string;
     savedAt: string;
 }
 

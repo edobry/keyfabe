@@ -131,3 +131,63 @@ export function parseCloneResult(output: string): CloneResult {
         /done/i.test(output) || /written/i.test(output) || /cloned/i.test(output) || /verified/i.test(output);
     return { success: !hasError && hasDone };
 }
+
+export interface AutopwnResult {
+    success: boolean;
+    keyFile: string | null;
+    staticNonce: boolean;
+}
+
+export function parseAutopwn(output: string): AutopwnResult {
+    const staticNonce = /static encrypted nonce/i.test(output);
+    const keyFileMatch =
+        output.match(/saved\s+to\s+(?:file\s+)?(\S+\.bin)/i) ??
+        output.match(/keys\s+(?:saved|dumped)\s+(?:to\s+)?(\S+\.bin)/i) ??
+        output.match(/(\S+hf-mf-[0-9A-Fa-f]+-key\.bin)/i);
+    const keyFile = keyFileMatch?.[1] ?? null;
+    const success = keyFile !== null && !staticNonce;
+    return { success, keyFile, staticNonce };
+}
+
+export interface DumpResult {
+    success: boolean;
+    dumpFile: string | null;
+}
+
+export function parseDump(output: string): DumpResult {
+    const dumpFileMatch =
+        output.match(/saved\s+(?:\d+\s+blocks?\s+)?to\s+(?:file\s+)?(\S+\.bin)/i) ??
+        output.match(/(\S+hf-mf-[0-9A-Fa-f]+-dump\.bin)/i);
+    const dumpFile = dumpFileMatch?.[1] ?? null;
+    const hasError = /error/i.test(output) && !/errorrate/i.test(output);
+    return { success: dumpFile !== null && !hasError, dumpFile };
+}
+
+export interface RestoreResult {
+    success: boolean;
+    failedBlocks: number;
+}
+
+export function parseRestore(output: string): RestoreResult {
+    const failedMatch = output.match(/(\d+)\s+blocks?\s+failed/i);
+    const failedBlocks = failedMatch ? parseInt(failedMatch[1], 10) : 0;
+    const hasError = /error/i.test(output) && !/errorrate/i.test(output);
+    const hasDone = /done/i.test(output) || /restored/i.test(output) || /wrote/i.test(output);
+    const success = !hasError && hasDone && failedBlocks === 0;
+    return { success, failedBlocks };
+}
+
+export interface Fm11rf08sResult {
+    success: boolean;
+    keyFile: string | null;
+}
+
+export function parseFm11rf08sRecovery(output: string): Fm11rf08sResult {
+    const keyFileMatch =
+        output.match(/saved\s+to\s+(?:file\s+)?(\S+\.bin)/i) ??
+        output.match(/keys\s+(?:saved|dumped)\s+(?:to\s+)?(\S+\.bin)/i) ??
+        output.match(/(\S+hf-mf-[0-9A-Fa-f]+-key\.bin)/i);
+    const keyFile = keyFileMatch?.[1] ?? null;
+    const hasError = /error/i.test(output) && !/errorrate/i.test(output);
+    return { success: keyFile !== null && !hasError, keyFile };
+}

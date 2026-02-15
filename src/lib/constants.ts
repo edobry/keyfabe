@@ -25,6 +25,13 @@ export const WriteTarget = {
     HF: "magic card (Gen1A or Gen2/CUID)",
 } as const;
 
+export const WriteHint = {
+    not_magic:
+        'This is a regular MIFARE Classic card with a factory-locked UID.\nOnly "magic" cards (Gen1A or Gen2/CUID) allow UID changes.',
+    wrong_freq_lf_got_hf:
+        "Detected an HF card, but this identity requires a blank T55x7 (LF) tag.\nRemove this card and place a T55x7 on the antenna.",
+} as const;
+
 export const MagicCardType = {
     GEN1A: "Gen1A",
     GEN2_CUID: "Gen2/CUID",
@@ -76,6 +83,7 @@ const hid = lf.sub("hid");
 const mf = hf.sub("mf");
 
 const hf14a = hf.sub("14a");
+const script = new Pm3Command("script");
 
 export const Pm3Cmd = {
     LF_SEARCH: lf.sub("search"),
@@ -88,7 +96,11 @@ export const Pm3Cmd = {
     HF_MF_CSETUID: mf.sub("csetuid"),
     HF_MF_WRBL: mf.sub("wrbl"),
     HF_MF_RDBL: mf.sub("rdbl"),
+    HF_MF_AUTOPWN: mf.sub("autopwn"),
+    HF_MF_DUMP: mf.sub("dump"),
+    HF_MF_RESTORE: mf.sub("restore"),
     HF_14A_CONFIG: hf14a.sub("config"),
     HW_STATUS: hw.sub("status"),
     HW_TUNE: hw.sub("tune"),
+    SCRIPT_RUN: script.sub("run"),
 } as const;

@@ -1,4 +1,5 @@
 import * as p from "@clack/prompts";
+import { WriteHint } from "./constants.js";
 import type { CardInfo } from "./parsers.js";
 
 export const LF_VOLTAGE_THRESHOLD = 15;
@@ -28,4 +29,20 @@ export function printNoSavedTags() {
 
 export function printFobNotFound(name: string) {
     p.log.error(`No saved tag named "${name}". Use \`keyfabe list\` to see saved tags.`);
+}
+
+export function printNotMagicHint() {
+    p.log.warn(WriteHint.not_magic);
+}
+
+export function printFrequencyMismatchHint(expected: "LF") {
+    if (expected === "LF") {
+        p.log.warn(WriteHint.wrong_freq_lf_got_hf);
+    }
+}
+
+export function printFullCardCloneProgress(method: string) {
+    if (method === "fm11rf08s") {
+        p.log.info("Using FM11RF08S recovery — this takes approximately 28 minutes.");
+    }
 }

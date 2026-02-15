@@ -6,10 +6,12 @@ mockClack();
 vi.mock("../../src/lib/card-ops.js", () => ({
     searchCard: vi.fn(),
     writeAndVerify: vi.fn(),
+    detectMagicType: vi.fn(),
 }));
 
 vi.mock("../../src/lib/pm3.js", () => ({
     requireDevice: vi.fn().mockResolvedValue(true),
+    pm3Exec: vi.fn(),
     Pm3Error: class Pm3Error extends Error {
         stdout: string;
         stderr: string;
@@ -31,9 +33,23 @@ vi.mock("../../src/lib/prompts.js", () => ({
     promptName: vi.fn(),
 }));
 
+vi.mock("../../src/lib/mf-ops.js", () => ({
+    crackKeys: vi.fn(),
+    dumpCard: vi.fn(),
+    restoreCard: vi.fn(),
+}));
+
+vi.mock("../../src/lib/display.js", () => ({
+    printCardInfo: vi.fn(),
+    printDoctorHint: vi.fn(),
+    printFullCardCloneProgress: vi.fn(),
+    printNotMagicHint: vi.fn(),
+}));
+
 import { clone } from "../../src/commands/clone.js";
-import { searchCard, writeAndVerify } from "../../src/lib/card-ops.js";
-import { Pm3Error, requireDevice } from "../../src/lib/pm3.js";
+import { detectMagicType, searchCard, writeAndVerify } from "../../src/lib/card-ops.js";
+import { crackKeys, dumpCard, restoreCard } from "../../src/lib/mf-ops.js";
+import { Pm3Error, pm3Exec, requireDevice } from "../../src/lib/pm3.js";
 import { promptName } from "../../src/lib/prompts.js";
 import { saveFob } from "../../src/lib/store.js";
 
@@ -43,6 +59,11 @@ const mockWriteAndVerify = vi.mocked(writeAndVerify);
 const mockSaveFob = vi.mocked(saveFob);
 const mockPromptName = vi.mocked(promptName);
 const MockPm3Error = Pm3Error as any;
+const mockCrackKeys = vi.mocked(crackKeys);
+const mockDumpCard = vi.mocked(dumpCard);
+const mockRestoreCard = vi.mocked(restoreCard);
+const mockDetectMagicType = vi.mocked(detectMagicType);
+const mockPm3Exec = vi.mocked(pm3Exec);
 
 beforeEach(() => {
     setupBeforeEach();
@@ -83,18 +104,6 @@ describe("clone", () => {
         vi.useRealTimers();
     });
 
-    it("HF card found → clone proceeds with writeAndVerify", async () => {
-        mockSearchCard.mockResolvedValueOnce({ type: "MIFARE Classic 1K", id: "DEADBEEF" });
-        mockWriteAndVerify.mockResolvedValue(true);
-        mockPromptName.mockResolvedValue("hf-clone");
-        mockSaveFob.mockResolvedValue(undefined);
-
-        expect(await clone()).toBe(true);
-        expect(mockWriteAndVerify).toHaveBeenCalledWith(
-            expect.objectContaining({ type: "MIFARE Classic 1K", id: "DEADBEEF" }),
-        );
-    });
-
     it("no device connected → false immediately", async () => {
         mockRequireDevice.mockResolvedValueOnce(false);
 
@@ -111,6 +120,141 @@ describe("clone", () => {
 
     it("pm3 not found during read → false", async () => {
         mockSearchCard.mockRejectedValueOnce(new MockPm3Error("pm3 command not found", "", ""));
+
+        expect(await clone()).toBe(false);
+    });
+
+    it("LF cards still use UID-only path (regression)", async () => {
+        mockSearchCard.mockResolvedValueOnce({ type: "EM410x", id: "1A2B3C4D5E" });
+        mockWriteAndVerify.mockResolvedValue(true);
+        mockPromptName.mockResolvedValue("lf-fob");
+        mockSaveFob.mockResolvedValue(undefined);
+
+        expect(await clone()).toBe(true);
+        expect(mockWriteAndVerify).toHaveBeenCalled();
+        expect(mockCrackKeys).not.toHaveBeenCalled();
+    });
+});
+
+describe("clone MIFARE Classic full-card", () => {
+    it("MIFARE Classic 1K → full-card flow (crack → dump → restore → verify → save)", async () => {
+        mockSearchCard.mockResolvedValueOnce({ type: "MIFARE Classic 1K", id: "DEADBEEF" });
+        mockCrackKeys.mockResolvedValueOnce({
+            success: true,
+            keyFile: "hf-mf-DEADBEEF-key.bin",
+            method: "autopwn",
+        });
+        mockDumpCard.mockResolvedValueOnce({
+            success: true,
+            dumpFile: "hf-mf-DEADBEEF-dump.bin",
+            keyFile: "hf-mf-DEADBEEF-key.bin",
+        });
+        mockDetectMagicType.mockResolvedValueOnce("Gen1A");
+        mockRestoreCard.mockResolvedValueOnce({ success: true, failedBlocks: 0 });
+        mockPm3Exec.mockResolvedValueOnce({
+            stdout: "[+]  UID: DE AD BE EF\n[+] MIFARE Classic 1K",
+            stderr: "",
+        });
+        mockPromptName.mockResolvedValue("mifare-clone");
+        mockSaveFob.mockResolvedValue(undefined);
+
+        expect(await clone()).toBe(true);
+        expect(mockCrackKeys).toHaveBeenCalledWith("DEADBEEF", "MIFARE Classic 1K");
+        expect(mockDumpCard).toHaveBeenCalledWith("DEADBEEF", "MIFARE Classic 1K", "hf-mf-DEADBEEF-key.bin");
+        expect(mockRestoreCard).toHaveBeenCalledWith(
+            "hf-mf-DEADBEEF-dump.bin",
+            "hf-mf-DEADBEEF-key.bin",
+            "MIFARE Classic 1K",
+        );
+        expect(mockSaveFob).toHaveBeenCalledWith(
+            expect.objectContaining({
+                name: "mifare-clone",
+                type: "MIFARE Classic 1K",
+                id: "DEADBEEF",
+                dumpFile: "hf-mf-DEADBEEF-dump.bin",
+            }),
+        );
+        expect(mockWriteAndVerify).not.toHaveBeenCalled();
+    });
+
+    it("MIFARE Classic 1K with FM11RF08S fallback", async () => {
+        mockSearchCard.mockResolvedValueOnce({ type: "MIFARE Classic 1K", id: "AABBCCDD" });
+        mockCrackKeys.mockResolvedValueOnce({
+            success: true,
+            keyFile: "hf-mf-AABBCCDD-key.bin",
+            method: "fm11rf08s",
+        });
+        mockDumpCard.mockResolvedValueOnce({
+            success: true,
+            dumpFile: "hf-mf-AABBCCDD-dump.bin",
+            keyFile: "hf-mf-AABBCCDD-key.bin",
+        });
+        mockDetectMagicType.mockResolvedValueOnce("Gen2/CUID");
+        mockRestoreCard.mockResolvedValueOnce({ success: true, failedBlocks: 0 });
+        mockPm3Exec.mockResolvedValueOnce({
+            stdout: "[+]  UID: AA BB CC DD\n[+] MIFARE Classic 1K",
+            stderr: "",
+        });
+        mockPromptName.mockResolvedValue("fm-clone");
+        mockSaveFob.mockResolvedValue(undefined);
+
+        expect(await clone()).toBe(true);
+        expect(mockCrackKeys).toHaveBeenCalled();
+    });
+
+    it("key cracking fails → false", async () => {
+        mockSearchCard.mockResolvedValueOnce({ type: "MIFARE Classic 1K", id: "DEADBEEF" });
+        mockCrackKeys.mockResolvedValueOnce(null);
+
+        expect(await clone()).toBe(false);
+        expect(mockDumpCard).not.toHaveBeenCalled();
+    });
+
+    it("dump fails → false", async () => {
+        mockSearchCard.mockResolvedValueOnce({ type: "MIFARE Classic 1K", id: "DEADBEEF" });
+        mockCrackKeys.mockResolvedValueOnce({
+            success: true,
+            keyFile: "key.bin",
+            method: "autopwn",
+        });
+        mockDumpCard.mockResolvedValueOnce(null);
+
+        expect(await clone()).toBe(false);
+        expect(mockRestoreCard).not.toHaveBeenCalled();
+    });
+
+    it("target not magic card → false", async () => {
+        mockSearchCard.mockResolvedValueOnce({ type: "MIFARE Classic 1K", id: "DEADBEEF" });
+        mockCrackKeys.mockResolvedValueOnce({
+            success: true,
+            keyFile: "key.bin",
+            method: "autopwn",
+        });
+        mockDumpCard.mockResolvedValueOnce({
+            success: true,
+            dumpFile: "dump.bin",
+            keyFile: "key.bin",
+        });
+        mockDetectMagicType.mockResolvedValueOnce("unknown");
+
+        expect(await clone()).toBe(false);
+        expect(mockRestoreCard).not.toHaveBeenCalled();
+    });
+
+    it("restore fails → false", async () => {
+        mockSearchCard.mockResolvedValueOnce({ type: "MIFARE Classic 1K", id: "DEADBEEF" });
+        mockCrackKeys.mockResolvedValueOnce({
+            success: true,
+            keyFile: "key.bin",
+            method: "autopwn",
+        });
+        mockDumpCard.mockResolvedValueOnce({
+            success: true,
+            dumpFile: "dump.bin",
+            keyFile: "key.bin",
+        });
+        mockDetectMagicType.mockResolvedValueOnce("Gen1A");
+        mockRestoreCard.mockResolvedValueOnce({ success: false, failedBlocks: 5 });
 
         expect(await clone()).toBe(false);
     });
