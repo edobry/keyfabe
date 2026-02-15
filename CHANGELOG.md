@@ -1,3 +1,10 @@
+# [0.8.0](https://github.com/edobry/keyfabe/compare/v0.7.1...v0.8.0) (2026-02-15)
+
+
+### Features
+
+* add full-card MIFARE Classic cloning with automatic key cracking ([136edc8](https://github.com/edobry/keyfabe/commit/136edc833c57a0daa2d3ec469951cfc67b21c86f))
+
 ## [0.7.1](https://github.com/edobry/keyfabe/compare/v0.7.0...v0.7.1) (2026-02-14)
 
 
