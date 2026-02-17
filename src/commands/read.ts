@@ -4,7 +4,7 @@ import { DetectionSummary } from "../lib/constants.js";
 import { printCardInfo, printDetectionHint, printDoctorHint } from "../lib/display.js";
 import { Pm3Error, requireDevice } from "../lib/pm3.js";
 import { promptName } from "../lib/prompts.js";
-import { saveFob } from "../lib/store.js";
+import { saveTag } from "../lib/store.js";
 
 export async function read(options?: { saveAs?: string }): Promise<boolean> {
     if (!(await requireDevice())) return false;
@@ -27,7 +27,7 @@ export async function read(options?: { saveAs?: string }): Promise<boolean> {
         // Prompt to save
         const name = options?.saveAs ?? (await promptName());
         if (name) {
-            await saveFob({
+            await saveTag({
                 name,
                 type: card.type,
                 id: card.id,

@@ -1,16 +1,16 @@
 import * as p from "@clack/prompts";
-import { printFobNotFound, printNoSavedTags } from "../lib/display.js";
-import { confirm, selectFob } from "../lib/prompts.js";
-import { loadFobs, removeFob } from "../lib/store.js";
+import { printNoSavedTags, printTagNotFound } from "../lib/display.js";
+import { confirm, selectTag } from "../lib/prompts.js";
+import { loadTags, removeTag } from "../lib/store.js";
 
-export async function deleteFob(name?: string): Promise<boolean> {
+export async function deleteTag(name?: string): Promise<boolean> {
     if (!name) {
-        const fobs = await loadFobs();
-        if (fobs.length === 0) {
+        const tags = await loadTags();
+        if (tags.length === 0) {
             printNoSavedTags();
             return false;
         }
-        name = await selectFob(fobs, "Which tag to delete?");
+        name = await selectTag(tags, "Which tag to delete?");
     }
 
     const shouldDelete = await confirm(`Delete "${name}"?`);
@@ -19,9 +19,9 @@ export async function deleteFob(name?: string): Promise<boolean> {
         return false;
     }
 
-    const removed = await removeFob(name);
+    const removed = await removeTag(name);
     if (!removed) {
-        printFobNotFound(name);
+        printTagNotFound(name);
         return false;
     }
     p.log.success(`Deleted "${name}".`);

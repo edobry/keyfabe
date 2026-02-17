@@ -4,35 +4,35 @@ import { mockClack, setupBeforeEach } from "../helpers/mocks.js";
 mockClack();
 
 vi.mock("../../src/lib/store.js", () => ({
-    removeFob: vi.fn(),
-    loadFobs: vi.fn(),
+    removeTag: vi.fn(),
+    loadTags: vi.fn(),
 }));
 
 vi.mock("../../src/lib/prompts.js", () => ({
     confirm: vi.fn().mockResolvedValue(true),
-    selectFob: vi.fn(),
+    selectTag: vi.fn(),
 }));
 
-import { deleteFob } from "../../src/commands/delete.js";
-import { removeFob } from "../../src/lib/store.js";
+import { deleteTag } from "../../src/commands/delete.js";
+import { removeTag } from "../../src/lib/store.js";
 
-const mockRemoveFob = vi.mocked(removeFob);
+const mockRemoveTag = vi.mocked(removeTag);
 
 beforeEach(() => {
     setupBeforeEach();
 });
 
-describe("deleteFob", () => {
-    it("deletes existing fob → true", async () => {
-        mockRemoveFob.mockResolvedValue(true);
+describe("deleteTag", () => {
+    it("deletes existing tag → true", async () => {
+        mockRemoveTag.mockResolvedValue(true);
 
-        expect(await deleteFob("front-door")).toBe(true);
-        expect(mockRemoveFob).toHaveBeenCalledWith("front-door");
+        expect(await deleteTag("front-door")).toBe(true);
+        expect(mockRemoveTag).toHaveBeenCalledWith("front-door");
     });
 
-    it("fob not found → false", async () => {
-        mockRemoveFob.mockResolvedValue(false);
+    it("tag not found → false", async () => {
+        mockRemoveTag.mockResolvedValue(false);
 
-        expect(await deleteFob("nonexistent")).toBe(false);
+        expect(await deleteTag("nonexistent")).toBe(false);
     });
 });

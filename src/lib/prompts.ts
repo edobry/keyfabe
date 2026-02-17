@@ -1,5 +1,5 @@
 import * as p from "@clack/prompts";
-import type { Fob } from "./store.js";
+import type { Tag } from "./store.js";
 
 function handleCancel(value: unknown): asserts value is string | boolean {
     if (p.isCancel(value)) {
@@ -36,14 +36,14 @@ export async function promptName(): Promise<string | null> {
     return trimmed || null;
 }
 
-export async function selectFob(fobs: Fob[], message = "Select a tag"): Promise<string> {
+export async function selectTag(tags: Tag[], message = "Select a tag"): Promise<string> {
     if (!isInteractive()) {
         p.log.error("Tag name must be provided as a CLI argument in non-interactive mode.");
         process.exit(1);
     }
     const value = await p.select({
         message,
-        options: fobs.map((f) => ({
+        options: tags.map((f) => ({
             value: f.name,
             label: f.name,
             hint: `${f.type} ${f.id}`,

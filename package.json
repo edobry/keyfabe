@@ -24,6 +24,7 @@
     "nfc",
     "mifare",
     "keyfob",
+    "tag",
     "clone"
   ],
   "scripts": {

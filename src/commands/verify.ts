@@ -1,32 +1,32 @@
 import * as p from "@clack/prompts";
 import { searchCardWithDiagnosis } from "../lib/card-ops.js";
 import { DetectionSummary } from "../lib/constants.js";
-import { printDetectionHint, printDoctorHint, printFobNotFound, printNoSavedTags } from "../lib/display.js";
+import { printDetectionHint, printDoctorHint, printNoSavedTags, printTagNotFound } from "../lib/display.js";
 import { Pm3Error, requireDevice } from "../lib/pm3.js";
-import { selectFob, waitForEnter } from "../lib/prompts.js";
-import { getFob, loadFobs } from "../lib/store.js";
+import { selectTag, waitForEnter } from "../lib/prompts.js";
+import { getTag, loadTags } from "../lib/store.js";
 
 export async function verify(name?: string): Promise<boolean> {
     p.intro("Verify Tag");
 
     if (!name) {
-        const fobs = await loadFobs();
-        if (fobs.length === 0) {
+        const tags = await loadTags();
+        if (tags.length === 0) {
             printNoSavedTags();
             return false;
         }
-        name = await selectFob(fobs, "Which saved tag to verify against?");
+        name = await selectTag(tags, "Which saved tag to verify against?");
     }
 
-    const fob = await getFob(name);
-    if (!fob) {
-        printFobNotFound(name);
+    const tag = await getTag(name);
+    if (!tag) {
+        printTagNotFound(name);
         return false;
     }
 
     if (!(await requireDevice())) return false;
 
-    p.log.info(`Verifying against "${fob.name}" (${fob.type} ${fob.id})`);
+    p.log.info(`Verifying against "${tag.name}" (${tag.type} ${tag.id})`);
     await waitForEnter("Place the tag to check on the antenna.");
 
     const spinner = p.spinner();
@@ -42,22 +42,22 @@ export async function verify(name?: string): Promise<boolean> {
 
         spinner.stop(`Read: ${card.type} ${card.id}`);
 
-        const idMatch = card.id === fob.id;
-        const typeMatch = card.type === fob.type;
+        const idMatch = card.id === tag.id;
+        const typeMatch = card.type === tag.type;
 
         if (idMatch && typeMatch) {
-            p.log.success(`Match! ID ${card.id} matches "${fob.name}".`);
+            p.log.success(`Match! ID ${card.id} matches "${tag.name}".`);
             p.outro("Verification passed.");
             return true;
         }
 
         if (idMatch) {
-            p.log.warn(`ID matches (${card.id}) but type differs: read ${card.type}, expected ${fob.type}.`);
+            p.log.warn(`ID matches (${card.id}) but type differs: read ${card.type}, expected ${tag.type}.`);
             p.outro("Partial match — ID is correct.");
             return true;
         }
 
-        p.log.error(`Mismatch: read ${card.id}, expected ${fob.id}.`);
+        p.log.error(`Mismatch: read ${card.id}, expected ${tag.id}.`);
         return false;
     } catch (err) {
         if (err instanceof Pm3Error) {

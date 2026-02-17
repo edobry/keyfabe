@@ -1,45 +1,45 @@
 import * as p from "@clack/prompts";
 import { detectMagicType, writeAndVerify } from "../lib/card-ops.js";
 import { CardType, cardFrequency, MagicCardType, Pm3Cmd, WriteTarget } from "../lib/constants.js";
-import { printFobNotFound, printNoSavedTags, printNotMagicHint } from "../lib/display.js";
+import { printNoSavedTags, printNotMagicHint, printTagNotFound } from "../lib/display.js";
 import { restoreCard } from "../lib/mf-ops.js";
 import { parseHfSearch } from "../lib/parsers.js";
 import { pm3Exec, requireDevice } from "../lib/pm3.js";
-import { selectFob, waitForEnter } from "../lib/prompts.js";
-import type { Fob } from "../lib/store.js";
-import { getFob, loadFobs } from "../lib/store.js";
+import { selectTag, waitForEnter } from "../lib/prompts.js";
+import type { Tag } from "../lib/store.js";
+import { getTag, loadTags } from "../lib/store.js";
 
 export async function write(name?: string): Promise<boolean> {
     p.intro("Write Tag");
 
     if (!name) {
-        const fobs = await loadFobs();
-        if (fobs.length === 0) {
+        const tags = await loadTags();
+        if (tags.length === 0) {
             printNoSavedTags();
             return false;
         }
-        name = await selectFob(fobs, "Which tag identity to write?");
+        name = await selectTag(tags, "Which tag identity to write?");
     }
 
-    const fob = await getFob(name);
-    if (!fob) {
-        printFobNotFound(name);
+    const tag = await getTag(name);
+    if (!tag) {
+        printTagNotFound(name);
         return false;
     }
 
     if (!(await requireDevice())) return false;
 
-    p.log.info(`Writing "${fob.name}" (${fob.type} ${fob.id})`);
+    p.log.info(`Writing "${tag.name}" (${tag.type} ${tag.id})`);
 
     // Full-card restore path
-    if (fob.dumpFile && (fob.type === CardType.MIFARE_CLASSIC_1K || fob.type === CardType.MIFARE_CLASSIC_4K)) {
-        return writeFullCard(fob);
+    if (tag.dumpFile && (tag.type === CardType.MIFARE_CLASSIC_1K || tag.type === CardType.MIFARE_CLASSIC_4K)) {
+        return writeFullCard(tag);
     }
 
-    const freq = cardFrequency(fob.type);
+    const freq = cardFrequency(tag.type);
     await waitForEnter(`Place a ${WriteTarget[freq]} on the antenna.`);
 
-    const success = await writeAndVerify({ type: fob.type, id: fob.id, encoding: fob.encoding });
+    const success = await writeAndVerify({ type: tag.type, id: tag.id, encoding: tag.encoding });
 
     if (success) {
         p.outro("Write successful!");
@@ -49,7 +49,7 @@ export async function write(name?: string): Promise<boolean> {
     return false;
 }
 
-async function writeFullCard(fob: Fob): Promise<boolean> {
+async function writeFullCard(tag: Tag): Promise<boolean> {
     await waitForEnter(`Place a ${WriteTarget.HF} on the antenna.`);
 
     // Detect magic card type
@@ -71,7 +71,7 @@ async function writeFullCard(fob: Fob): Promise<boolean> {
     // Restore all blocks
     const restoreSpinner = p.spinner();
     restoreSpinner.start("Restoring all blocks to magic card...");
-    const restoreResult = await restoreCard(fob.dumpFile!, fob.dumpFile!.replace("-dump.", "-key."), fob.type);
+    const restoreResult = await restoreCard(tag.dumpFile!, tag.dumpFile!.replace("-dump.", "-key."), tag.type);
     if (!restoreResult.success) {
         restoreSpinner.stop("Restore failed.");
         p.log.error(`${restoreResult.failedBlocks} block(s) failed to write.`);
@@ -86,7 +86,7 @@ async function writeFullCard(fob: Fob): Promise<boolean> {
     verifySpinner.start("Verifying clone...");
     const { stdout: verifyOut } = await pm3Exec(Pm3Cmd.HF_SEARCH);
     const readback = parseHfSearch(verifyOut);
-    if (readback && readback.id === fob.id) {
+    if (readback && readback.id === tag.id) {
         verifySpinner.stop("Verification passed — UIDs match");
     } else {
         verifySpinner.stop("Verification warning — UID readback mismatch");

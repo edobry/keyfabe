@@ -9,24 +9,24 @@ vi.mock("../../src/lib/card-ops.js", () => ({
 }));
 
 vi.mock("../../src/lib/store.js", () => ({
-    loadFobs: vi.fn().mockResolvedValue([]),
-    getFob: vi.fn(),
+    loadTags: vi.fn().mockResolvedValue([]),
+    getTag: vi.fn(),
 }));
 
 vi.mock("../../src/lib/prompts.js", () => ({
     waitForEnter: vi.fn().mockResolvedValue(undefined),
-    selectFob: vi.fn(),
+    selectTag: vi.fn(),
 }));
 
 import { verify } from "../../src/commands/verify.js";
 import { searchCardWithDiagnosis } from "../../src/lib/card-ops.js";
 import { Pm3Error, requireDevice } from "../../src/lib/pm3.js";
-import { getFob, loadFobs } from "../../src/lib/store.js";
+import { getTag, loadTags } from "../../src/lib/store.js";
 
 const mockSearchCardWithDiagnosis = vi.mocked(searchCardWithDiagnosis);
 const mockRequireDevice = vi.mocked(requireDevice);
-const mockGetFob = vi.mocked(getFob);
-const mockLoadFobs = vi.mocked(loadFobs);
+const mockGetTag = vi.mocked(getTag);
+const mockLoadTags = vi.mocked(loadTags);
 const MockPm3Error = Pm3Error as any;
 
 beforeEach(() => {
@@ -36,7 +36,7 @@ beforeEach(() => {
 
 describe("verify", () => {
     it("ID and type match → true", async () => {
-        mockGetFob.mockResolvedValueOnce({
+        mockGetTag.mockResolvedValueOnce({
             name: "my-tag",
             type: "MIFARE Classic 1K",
             id: "DEADBEEF",
@@ -51,7 +51,7 @@ describe("verify", () => {
     });
 
     it("ID matches but type differs → true (partial match)", async () => {
-        mockGetFob.mockResolvedValueOnce({
+        mockGetTag.mockResolvedValueOnce({
             name: "my-tag",
             type: "MIFARE Classic 1K",
             id: "DEADBEEF",
@@ -66,7 +66,7 @@ describe("verify", () => {
     });
 
     it("ID mismatch → false", async () => {
-        mockGetFob.mockResolvedValueOnce({
+        mockGetTag.mockResolvedValueOnce({
             name: "my-tag",
             type: "MIFARE Classic 1K",
             id: "DEADBEEF",
@@ -81,7 +81,7 @@ describe("verify", () => {
     });
 
     it("no tag detected on reader → false", async () => {
-        mockGetFob.mockResolvedValueOnce({
+        mockGetTag.mockResolvedValueOnce({
             name: "my-tag",
             type: "EM410x",
             id: "1A2B3C4D5E",
@@ -93,21 +93,21 @@ describe("verify", () => {
     });
 
     it("no saved tags → false", async () => {
-        mockLoadFobs.mockResolvedValueOnce([]);
+        mockLoadTags.mockResolvedValueOnce([]);
 
         expect(await verify()).toBe(false);
         expect(mockSearchCardWithDiagnosis).not.toHaveBeenCalled();
     });
 
     it("saved tag not found by name → false", async () => {
-        mockGetFob.mockResolvedValueOnce(undefined);
+        mockGetTag.mockResolvedValueOnce(undefined);
 
         expect(await verify("nonexistent")).toBe(false);
         expect(mockSearchCardWithDiagnosis).not.toHaveBeenCalled();
     });
 
     it("no device → false", async () => {
-        mockGetFob.mockResolvedValueOnce({
+        mockGetTag.mockResolvedValueOnce({
             name: "my-tag",
             type: "EM410x",
             id: "1A2B3C4D5E",
@@ -120,7 +120,7 @@ describe("verify", () => {
     });
 
     it("pm3 error during search → false", async () => {
-        mockGetFob.mockResolvedValueOnce({
+        mockGetTag.mockResolvedValueOnce({
             name: "my-tag",
             type: "EM410x",
             id: "1A2B3C4D5E",

@@ -4,7 +4,7 @@ import { mockClack, setupBeforeEach } from "../helpers/mocks.js";
 mockClack();
 
 import * as p from "@clack/prompts";
-import { confirm, isInteractive, promptName, promptText, selectFob, waitForEnter } from "../../src/lib/prompts.js";
+import { confirm, isInteractive, promptName, promptText, selectTag, waitForEnter } from "../../src/lib/prompts.js";
 
 const mockText = vi.mocked(p.text);
 const mockConfirm = vi.mocked(p.confirm);
@@ -68,9 +68,9 @@ describe("non-interactive mode", () => {
         expect(mockConfirm).not.toHaveBeenCalled();
     });
 
-    it("selectFob exits with code 1", async () => {
-        const fobs = [{ name: "test", type: "EM410x" as const, id: "1234567890", savedAt: "2024-01-01" }];
-        await expect(selectFob(fobs)).rejects.toThrow(ExitError);
+    it("selectTag exits with code 1", async () => {
+        const tags = [{ name: "test", type: "EM410x" as const, id: "1234567890", savedAt: "2024-01-01" }];
+        await expect(selectTag(tags)).rejects.toThrow(ExitError);
         expect(mockExit).toHaveBeenCalledWith(1);
         expect(mockSelect).not.toHaveBeenCalled();
     });
@@ -112,10 +112,10 @@ describe("interactive mode", () => {
         expect(mockConfirm).toHaveBeenCalledWith({ message: "Are you sure?" });
     });
 
-    it("selectFob delegates to p.select", async () => {
-        const fobs = [{ name: "test", type: "EM410x" as const, id: "1234567890", savedAt: "2024-01-01" }];
+    it("selectTag delegates to p.select", async () => {
+        const tags = [{ name: "test", type: "EM410x" as const, id: "1234567890", savedAt: "2024-01-01" }];
         mockSelect.mockResolvedValue("test");
-        const result = await selectFob(fobs);
+        const result = await selectTag(tags);
         expect(result).toBe("test");
         expect(mockSelect).toHaveBeenCalled();
     });

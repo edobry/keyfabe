@@ -76,10 +76,10 @@ keyfabe rename [old-name] [new-name]
 keyfabe delete [name]
 
 # export all saved identities as JSON
-keyfabe export > fobs.json
+keyfabe export > tags.json
 
 # import identities from a JSON file
-keyfabe import fobs.json
+keyfabe import tags.json
 
 # repair a bricked magic card (bad BCC/anticollision)
 keyfabe repair
@@ -151,7 +151,7 @@ Reads whatever tag is on the antenna and compares its ID against a saved identit
 
 ### `keyfabe list`
 
-Lists all saved tag identities from `~/.keyfabe/fobs.json`.
+Lists all saved tag identities from `~/.keyfabe/tags.json`.
 
 ### `keyfabe show [name]`
 
@@ -167,7 +167,7 @@ Deletes a saved tag identity. Without a name, presents an interactive picker.
 
 ### `keyfabe export`
 
-Exports all saved tag identities as JSON to stdout. Pipe to a file for backup: `keyfabe export > fobs.json`.
+Exports all saved tag identities as JSON to stdout. Pipe to a file for backup: `keyfabe export > tags.json`.
 
 ### `keyfabe import <file>`
 
@@ -227,7 +227,7 @@ src/
     firmware.ts         # build/flash subprocess helpers
     parsers.ts          # parse pm3 output (card type, ID, voltages)
     block0.ts           # MIFARE Classic block 0 utilities (BCC, builder)
-    store.ts            # read/write ~/.keyfabe/fobs.json
+    store.ts            # read/write ~/.keyfabe/tags.json
     constants.ts        # shared card type and pm3 command constants
     card-ops.ts         # search, write-and-verify logic shared by commands
     mf-ops.ts           # MIFARE Classic full-card operations (crack, dump, restore)

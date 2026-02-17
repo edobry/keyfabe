@@ -4,14 +4,14 @@ import { getOutput, mockClack, setupBeforeEach } from "../helpers/mocks.js";
 mockClack();
 
 vi.mock("../../src/lib/store.js", () => ({
-    loadFobs: vi.fn(),
+    loadTags: vi.fn(),
 }));
 
 import * as p from "@clack/prompts";
 import { list } from "../../src/commands/list.js";
-import { loadFobs } from "../../src/lib/store.js";
+import { loadTags } from "../../src/lib/store.js";
 
-const mockLoadFobs = vi.mocked(loadFobs);
+const mockLoadTags = vi.mocked(loadTags);
 const mockNote = vi.mocked(p.note);
 
 beforeEach(() => {
@@ -20,14 +20,14 @@ beforeEach(() => {
 
 describe("list", () => {
     it("empty store → info message, no note", async () => {
-        mockLoadFobs.mockResolvedValue([]);
+        mockLoadTags.mockResolvedValue([]);
 
         expect(await list()).toBe(true);
         expect(mockNote).not.toHaveBeenCalled();
     });
 
-    it("fobs exist → displays table via p.note", async () => {
-        mockLoadFobs.mockResolvedValue([
+    it("tags exist → displays table via p.note", async () => {
+        mockLoadTags.mockResolvedValue([
             { name: "front-door", type: "EM410x", id: "1A2B3C4D5E", savedAt: "2024-06-15T12:00:00.000Z" },
             { name: "garage", type: "HID Prox", id: "2004263F88", savedAt: "2024-06-16T12:00:00.000Z" },
         ]);
@@ -42,24 +42,24 @@ describe("list", () => {
     });
 
     it("--json flag → outputs valid JSON to console.log", async () => {
-        const fobs = [{ name: "front-door", type: "EM410x", id: "1A2B3C4D5E", savedAt: "2024-06-15T12:00:00.000Z" }];
-        mockLoadFobs.mockResolvedValue(fobs);
+        const tags = [{ name: "front-door", type: "EM410x", id: "1A2B3C4D5E", savedAt: "2024-06-15T12:00:00.000Z" }];
+        mockLoadTags.mockResolvedValue(tags);
 
         expect(await list({ json: true })).toBe(true);
         const output = getOutput();
-        expect(JSON.parse(output)).toEqual(fobs);
+        expect(JSON.parse(output)).toEqual(tags);
     });
 
     it("--json with empty store → empty array", async () => {
-        mockLoadFobs.mockResolvedValue([]);
+        mockLoadTags.mockResolvedValue([]);
 
         expect(await list({ json: true })).toBe(true);
         const output = getOutput();
         expect(JSON.parse(output)).toEqual([]);
     });
 
-    it("shows encoding column when fobs have encoding", async () => {
-        mockLoadFobs.mockResolvedValue([
+    it("shows encoding column when tags have encoding", async () => {
+        mockLoadTags.mockResolvedValue([
             {
                 name: "front-door",
                 type: "EM410x",
@@ -76,8 +76,8 @@ describe("list", () => {
         expect(noteContent).toContain("RF/64");
     });
 
-    it("omits encoding column when no fobs have encoding", async () => {
-        mockLoadFobs.mockResolvedValue([
+    it("omits encoding column when no tags have encoding", async () => {
+        mockLoadTags.mockResolvedValue([
             { name: "front-door", type: "EM410x", id: "1A2B3C4D5E", savedAt: "2024-06-15T12:00:00.000Z" },
         ]);
 

@@ -1,12 +1,12 @@
 # keyfabe CLI — Spec
 
-A TypeScript CLI tool that wraps the Proxmark3 client to provide an ergonomic keyfob cloning workflow.
+A TypeScript CLI tool that wraps the Proxmark3 client to provide an ergonomic tag cloning workflow.
 
 ## Goals
 
 - Automate the multi-step read/detect/clone/verify process into a single guided flow
 - Detect and surface common problems (device not found, firmware mismatch, antenna issues)
-- Store cloned fob identities for later re-use
+- Store cloned tag identities for later re-use
 - Keep it simple — thin wrapper over `pm3`, not a reimplementation
 
 ## Usage
@@ -15,10 +15,10 @@ A TypeScript CLI tool that wraps the Proxmark3 client to provide an ergonomic ke
 # guided interactive clone flow
 keyfabe clone
 
-# read and identify a fob without cloning
+# read and identify a tag without cloning
 keyfabe read
 
-# write a previously-saved identity to a blank fob
+# write a previously-saved identity to a blank tag
 keyfabe write <name>
 
 # list saved identities
@@ -48,7 +48,7 @@ Read and identify whatever is on the antenna.
 1. Run `lf search`
 2. Parse the output for known card types (EM410x, HID Prox, etc.)
 3. Display: card type, ID, and any decoded formats (facility code, card number)
-4. Prompt to save with a name (e.g. "front-door") → writes to `~/.keyfabe/fobs.json`
+4. Prompt to save with a name (e.g. "front-door") → writes to `~/.keyfabe/tags.json`
 
 If nothing is detected on LF, automatically try `hf search` as a fallback.
 
@@ -56,10 +56,10 @@ If nothing is detected on LF, automatically try `hf search` as a fallback.
 
 Interactive guided flow combining read + write.
 
-1. Prompt: "Place your original keyfob on the antenna"
+1. Prompt: "Place your original tag on the antenna"
 2. Wait for a successful read (poll `lf search` with retries)
 3. Display the detected card info
-4. Prompt: "Remove original and place a blank T55x7 fob on the antenna"
+4. Prompt: "Remove original and place a blank T55x7 tag on the antenna"
 5. Run `lf t55xx detect` to confirm writable card is present
 6. Clone the ID (e.g. `lf em 410x clone --id <id>`)
 7. Verify by reading back (`lf em 410x reader`)
@@ -68,17 +68,17 @@ Interactive guided flow combining read + write.
 
 ### `keyfabe write <name>`
 
-Write a previously-saved identity to a blank fob.
+Write a previously-saved identity to a blank tag.
 
-1. Look up `<name>` in `~/.keyfabe/fobs.json`
-2. Prompt: "Place a blank T55x7 fob on the antenna"
+1. Look up `<name>` in `~/.keyfabe/tags.json`
+2. Prompt: "Place a blank T55x7 tag on the antenna"
 3. Detect the blank card
 4. Write the stored identity
 5. Verify readback
 
 ### `keyfabe list`
 
-Print all saved identities from `~/.keyfabe/fobs.json` as a table:
+Print all saved identities from `~/.keyfabe/tags.json` as a table:
 
 ```
 Name         Type      ID              Saved
@@ -88,7 +88,7 @@ garage       EM410x    0500128ABB      2026-02-07
 
 ## Data Model
 
-Saved in `~/.keyfabe/fobs.json`:
+Saved in `~/.keyfabe/tags.json`:
 
 ```json
 [
@@ -110,14 +110,14 @@ src/
   index.ts          # entry point, arg parsing
   commands/
     doctor.ts       # device health check
-    read.ts         # read fob
+    read.ts         # read tag
     clone.ts        # guided clone flow
     write.ts        # write saved identity
     list.ts         # list saved identities
   lib/
     pm3.ts          # spawns pm3 process, sends commands, parses output
     parsers.ts      # parse pm3 output (card type, ID, tune voltages, etc)
-    store.ts        # read/write ~/.keyfabe/fobs.json
+    store.ts        # read/write ~/.keyfabe/tags.json
     prompts.ts      # interactive user prompts (waiting, confirmation)
 ```
 
@@ -151,7 +151,7 @@ Regex-based parsers for pm3 text output:
 
 | Type | Read | Clone | Notes |
 |------|------|-------|-------|
-| EM410x | yes | yes | Most common LF keyfob |
+| EM410x | yes | yes | Most common LF tag |
 | HID Prox | yes | yes | Uses `lf hid clone` |
 | T55x7 | detect | n/a | Target writable card |
 
@@ -166,6 +166,6 @@ Every step in the flow should fail gracefully with a human-readable message:
 | No serial port found | "No Proxmark3 detected. Check USB connection." |
 | `hw status` fails | "Can't communicate with device. Firmware may need reflashing — see session-log.md." |
 | LF voltage low | "LF antenna reading low ({v}V). Check antenna connection." |
-| No card detected | "No card detected. Make sure the fob is flat against the antenna." |
-| Blank not T55x7 | "Card is not a writable T55x7. Use a blank T55x7 fob." |
+| No card detected | "No card detected. Make sure the tag is flat against the antenna." |
+| Blank not T55x7 | "Card is not a writable T55x7. Use a blank T55x7 tag." |
 | Clone verify mismatch | "Verification failed — readback ID doesn't match. Try again." |

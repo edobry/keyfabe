@@ -23,7 +23,7 @@ Regular MIFARE Classic cards have their UID burned in at the factory and permane
 **Must-haves:**
 - **"UID changeable"** or **"UID writable"** — the key phrase that distinguishes magic cards from regular ones. Without this, you're buying a normal card.
 - **Correct chip type** — must match what you're cloning:
-  - MIFARE Classic 1K for most access cards/fobs
+  - MIFARE Classic 1K for most access cards/tags
   - MIFARE Classic 4K if the original is 4K
 - **4-byte UID** — some cards offer 7-byte UIDs, which won't match a 4-byte original. Most access systems use 4-byte UIDs.
 - **13.56 MHz / ISO 14443A** — the HF protocol. All MIFARE Classic cards use this.
@@ -35,7 +35,7 @@ Regular MIFARE Classic cards have their UID burned in at the factory and permane
 
 **Good to know:**
 - Gen1A and Gen2/CUID are both fine — keyfabe supports both automatically
-- Cards come in various form factors (ISO card, fob, sticker, wristband) — pick whatever matches your use case
+- Cards come in various form factors (ISO card, key fob, sticker, wristband) — pick whatever matches your use case
 - Available on Amazon, AliExpress, etc. for a few dollars each. Search "MIFARE Classic 1K UID changeable" or "magic MIFARE card".
 - OBO HANDS is a commonly available brand with compatible cards
 

@@ -13,7 +13,7 @@ import type { CardInfo } from "../lib/parsers.js";
 import { parseHfSearch } from "../lib/parsers.js";
 import { Pm3Error, pm3Exec, requireDevice } from "../lib/pm3.js";
 import { promptName, waitForEnter } from "../lib/prompts.js";
-import { saveFob } from "../lib/store.js";
+import { saveTag } from "../lib/store.js";
 
 const MAX_READ_RETRIES = 3;
 const READ_RETRY_DELAY = 2000;
@@ -82,7 +82,7 @@ export async function clone(options?: { saveAs?: string }): Promise<boolean> {
         p.log.success("Clone successful!");
         const name = options?.saveAs ?? (await promptName());
         if (name) {
-            await saveFob({
+            await saveTag({
                 name,
                 type: card.type,
                 id: card.id,
@@ -170,7 +170,7 @@ async function cloneMifareClassic(card: CardInfo, options?: { saveAs?: string })
     p.log.success("Full-card clone successful!");
     const name = options?.saveAs ?? (await promptName());
     if (name) {
-        await saveFob({
+        await saveTag({
             name,
             type: card.type,
             id: card.id,

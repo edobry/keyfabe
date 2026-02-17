@@ -25,7 +25,7 @@ vi.mock("../../src/lib/pm3.js", () => ({
 }));
 
 vi.mock("../../src/lib/store.js", () => ({
-    saveFob: vi.fn(),
+    saveTag: vi.fn(),
 }));
 
 vi.mock("../../src/lib/prompts.js", () => ({
@@ -52,12 +52,12 @@ import { detectMagicType, searchCardWithDiagnosis, writeAndVerify } from "../../
 import { crackKeys, dumpCard, restoreCard } from "../../src/lib/mf-ops.js";
 import { Pm3Error, pm3Exec, requireDevice } from "../../src/lib/pm3.js";
 import { promptName } from "../../src/lib/prompts.js";
-import { saveFob } from "../../src/lib/store.js";
+import { saveTag } from "../../src/lib/store.js";
 
 const mockSearchCardWithDiagnosis = vi.mocked(searchCardWithDiagnosis);
 const mockRequireDevice = vi.mocked(requireDevice);
 const mockWriteAndVerify = vi.mocked(writeAndVerify);
-const mockSaveFob = vi.mocked(saveFob);
+const mockSaveTag = vi.mocked(saveTag);
 const mockPromptName = vi.mocked(promptName);
 const MockPm3Error = Pm3Error as any;
 const mockCrackKeys = vi.mocked(crackKeys);
@@ -78,14 +78,14 @@ describe("clone", () => {
             diagnosis: "none",
         });
         mockWriteAndVerify.mockResolvedValue(true);
-        mockPromptName.mockResolvedValue("cloned-fob");
-        mockSaveFob.mockResolvedValue(undefined);
+        mockPromptName.mockResolvedValue("cloned-tag");
+        mockSaveTag.mockResolvedValue(undefined);
 
         expect(await clone()).toBe(true);
         expect(mockWriteAndVerify).toHaveBeenCalledWith(expect.objectContaining({ type: "EM410x", id: "1A2B3C4D5E" }));
-        expect(mockSaveFob).toHaveBeenCalledWith(
+        expect(mockSaveTag).toHaveBeenCalledWith(
             expect.objectContaining({
-                name: "cloned-fob",
+                name: "cloned-tag",
                 type: "EM410x",
                 id: "1A2B3C4D5E",
             }),
@@ -140,8 +140,8 @@ describe("clone", () => {
             diagnosis: "none",
         });
         mockWriteAndVerify.mockResolvedValue(true);
-        mockPromptName.mockResolvedValue("lf-fob");
-        mockSaveFob.mockResolvedValue(undefined);
+        mockPromptName.mockResolvedValue("lf-tag");
+        mockSaveTag.mockResolvedValue(undefined);
 
         expect(await clone()).toBe(true);
         expect(mockWriteAndVerify).toHaveBeenCalled();
@@ -172,7 +172,7 @@ describe("clone MIFARE Classic full-card", () => {
             stderr: "",
         });
         mockPromptName.mockResolvedValue("mifare-clone");
-        mockSaveFob.mockResolvedValue(undefined);
+        mockSaveTag.mockResolvedValue(undefined);
 
         expect(await clone()).toBe(true);
         expect(mockCrackKeys).toHaveBeenCalledWith("DEADBEEF", "MIFARE Classic 1K");
@@ -182,7 +182,7 @@ describe("clone MIFARE Classic full-card", () => {
             "hf-mf-DEADBEEF-key.bin",
             "MIFARE Classic 1K",
         );
-        expect(mockSaveFob).toHaveBeenCalledWith(
+        expect(mockSaveTag).toHaveBeenCalledWith(
             expect.objectContaining({
                 name: "mifare-clone",
                 type: "MIFARE Classic 1K",
@@ -215,7 +215,7 @@ describe("clone MIFARE Classic full-card", () => {
             stderr: "",
         });
         mockPromptName.mockResolvedValue("fm-clone");
-        mockSaveFob.mockResolvedValue(undefined);
+        mockSaveTag.mockResolvedValue(undefined);
 
         expect(await clone()).toBe(true);
         expect(mockCrackKeys).toHaveBeenCalled();

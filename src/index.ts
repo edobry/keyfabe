@@ -3,9 +3,9 @@ import { createRequire } from "node:module";
 import * as p from "@clack/prompts";
 import { program } from "commander";
 import { clone } from "./commands/clone.js";
-import { deleteFob } from "./commands/delete.js";
+import { deleteTag } from "./commands/delete.js";
 import { doctor } from "./commands/doctor.js";
-import { exportFobs } from "./commands/export.js";
+import { exportTags } from "./commands/export.js";
 import { importFile } from "./commands/import.js";
 import { list } from "./commands/list.js";
 import { read } from "./commands/read.js";
@@ -122,9 +122,9 @@ program
     .command("delete")
     .description("Delete a saved tag identity")
     .argument("[name]", "name of the saved tag identity")
-    .action(withExitCode(deleteFob));
+    .action(withExitCode(deleteTag));
 
-program.command("export").description("Export all saved tag identities as JSON").action(withExitCode(exportFobs));
+program.command("export").description("Export all saved tag identities as JSON").action(withExitCode(exportTags));
 
 program
     .command("import")

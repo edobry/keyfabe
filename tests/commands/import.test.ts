@@ -7,13 +7,13 @@ import { mockClack, setupBeforeEach } from "../helpers/mocks.js";
 mockClack();
 
 vi.mock("../../src/lib/store.js", () => ({
-    importFobs: vi.fn(),
+    importTags: vi.fn(),
 }));
 
 import { importFile } from "../../src/commands/import.js";
-import { importFobs } from "../../src/lib/store.js";
+import { importTags } from "../../src/lib/store.js";
 
-const mockImportFobs = vi.mocked(importFobs);
+const mockImportTags = vi.mocked(importTags);
 
 let tmpDir: string;
 
@@ -28,23 +28,23 @@ afterEach(async () => {
 
 describe("importFile", () => {
     it("imports valid JSON file → true", async () => {
-        const filePath = join(tmpDir, "fobs.json");
-        const fobs = [{ name: "test", type: "EM410x", id: "1234567890", savedAt: "2024-01-01" }];
-        await writeFile(filePath, JSON.stringify(fobs));
-        mockImportFobs.mockResolvedValue({ added: 1, updated: 0 });
+        const filePath = join(tmpDir, "tags.json");
+        const tags = [{ name: "test", type: "EM410x", id: "1234567890", savedAt: "2024-01-01" }];
+        await writeFile(filePath, JSON.stringify(tags));
+        mockImportTags.mockResolvedValue({ added: 1, updated: 0 });
 
         expect(await importFile(filePath)).toBe(true);
-        expect(mockImportFobs).toHaveBeenCalledWith(fobs);
+        expect(mockImportTags).toHaveBeenCalledWith(tags);
     });
 
     it("reports added and updated counts", async () => {
-        const filePath = join(tmpDir, "fobs.json");
-        const fobs = [
+        const filePath = join(tmpDir, "tags.json");
+        const tags = [
             { name: "a", type: "EM410x", id: "1111111111", savedAt: "2024-01-01" },
             { name: "b", type: "HID Prox", id: "2222222222", savedAt: "2024-01-02" },
         ];
-        await writeFile(filePath, JSON.stringify(fobs));
-        mockImportFobs.mockResolvedValue({ added: 1, updated: 1 });
+        await writeFile(filePath, JSON.stringify(tags));
+        mockImportTags.mockResolvedValue({ added: 1, updated: 1 });
 
         expect(await importFile(filePath)).toBe(true);
     });
@@ -60,7 +60,7 @@ describe("importFile", () => {
         expect(await importFile(filePath)).toBe(false);
     });
 
-    it("invalid fob format → false", async () => {
+    it("invalid tag format → false", async () => {
         const filePath = join(tmpDir, "bad-format.json");
         await writeFile(filePath, JSON.stringify([{ foo: "bar" }]));
 

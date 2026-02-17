@@ -22,7 +22,7 @@ vi.mock("../../src/lib/pm3.js", () => ({
 }));
 
 vi.mock("../../src/lib/store.js", () => ({
-    saveFob: vi.fn(),
+    saveTag: vi.fn(),
 }));
 
 vi.mock("../../src/lib/prompts.js", () => ({
@@ -33,11 +33,11 @@ import { read } from "../../src/commands/read.js";
 import { searchCardWithDiagnosis } from "../../src/lib/card-ops.js";
 import { Pm3Error, requireDevice } from "../../src/lib/pm3.js";
 import { promptName } from "../../src/lib/prompts.js";
-import { saveFob } from "../../src/lib/store.js";
+import { saveTag } from "../../src/lib/store.js";
 
 const mockSearchCardWithDiagnosis = vi.mocked(searchCardWithDiagnosis);
 const mockRequireDevice = vi.mocked(requireDevice);
-const mockSaveFob = vi.mocked(saveFob);
+const mockSaveTag = vi.mocked(saveTag);
 const mockPromptName = vi.mocked(promptName);
 const MockPm3Error = Pm3Error as any;
 
@@ -47,18 +47,18 @@ beforeEach(() => {
 });
 
 describe("read", () => {
-    it("card found, user saves → calls saveFob", async () => {
+    it("card found, user saves → calls saveTag", async () => {
         mockSearchCardWithDiagnosis.mockResolvedValueOnce({
             card: { type: "EM410x", id: "1A2B3C4D5E", encoding: "RF/64" },
             diagnosis: "none",
         });
-        mockPromptName.mockResolvedValue("my-fob");
-        mockSaveFob.mockResolvedValue(undefined);
+        mockPromptName.mockResolvedValue("my-tag");
+        mockSaveTag.mockResolvedValue(undefined);
 
         expect(await read()).toBe(true);
-        expect(mockSaveFob).toHaveBeenCalledWith(
+        expect(mockSaveTag).toHaveBeenCalledWith(
             expect.objectContaining({
-                name: "my-fob",
+                name: "my-tag",
                 type: "EM410x",
                 id: "1A2B3C4D5E",
             }),
@@ -71,10 +71,10 @@ describe("read", () => {
             diagnosis: "none",
         });
         mockPromptName.mockResolvedValue("laundry");
-        mockSaveFob.mockResolvedValue(undefined);
+        mockSaveTag.mockResolvedValue(undefined);
 
         expect(await read()).toBe(true);
-        expect(mockSaveFob).toHaveBeenCalledWith(
+        expect(mockSaveTag).toHaveBeenCalledWith(
             expect.objectContaining({
                 name: "laundry",
                 type: "MIFARE Classic 1K",
@@ -109,7 +109,7 @@ describe("read", () => {
         expect(mockSearchCardWithDiagnosis).not.toHaveBeenCalled();
     });
 
-    it("user skips save → does not call saveFob", async () => {
+    it("user skips save → does not call saveTag", async () => {
         mockSearchCardWithDiagnosis.mockResolvedValueOnce({
             card: { type: "EM410x", id: "1A2B3C4D5E" },
             diagnosis: "none",
@@ -117,7 +117,7 @@ describe("read", () => {
         mockPromptName.mockResolvedValue(null);
 
         expect(await read()).toBe(true);
-        expect(mockSaveFob).not.toHaveBeenCalled();
+        expect(mockSaveTag).not.toHaveBeenCalled();
     });
 
     it("pm3 not found → false", async () => {

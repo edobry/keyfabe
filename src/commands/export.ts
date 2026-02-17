@@ -1,15 +1,15 @@
-import { loadFobs } from "../lib/store.js";
+import { loadTags } from "../lib/store.js";
 
-export async function exportFobs(): Promise<boolean> {
-    const fobs = await loadFobs();
+export async function exportTags(): Promise<boolean> {
+    const tags = await loadTags();
 
-    if (fobs.length === 0) {
+    if (tags.length === 0) {
         console.error("No saved tags to export.");
         return false;
     }
 
     // Output clean JSON to stdout for piping
-    process.stdout.write(`${JSON.stringify(fobs, null, 2)}\n`);
-    console.error(`Exported ${fobs.length} tag(s).`);
+    process.stdout.write(`${JSON.stringify(tags, null, 2)}\n`);
+    console.error(`Exported ${tags.length} tag(s).`);
     return true;
 }

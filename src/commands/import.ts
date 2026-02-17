@@ -1,9 +1,9 @@
 import { readFile } from "node:fs/promises";
 import * as p from "@clack/prompts";
-import type { Fob } from "../lib/store.js";
-import { importFobs } from "../lib/store.js";
+import type { Tag } from "../lib/store.js";
+import { importTags } from "../lib/store.js";
 
-function validateFobs(data: unknown): data is Fob[] {
+function validateTags(data: unknown): data is Tag[] {
     if (!Array.isArray(data)) return false;
     return data.every(
         (item) =>
@@ -33,12 +33,12 @@ export async function importFile(filePath: string): Promise<boolean> {
         return false;
     }
 
-    if (!validateFobs(data)) {
+    if (!validateTags(data)) {
         p.log.error("Invalid format. Expected an array of tag objects with name, type, id, and savedAt.");
         return false;
     }
 
-    const { added, updated } = await importFobs(data);
+    const { added, updated } = await importTags(data);
     p.log.success(`Imported ${added} new, updated ${updated} existing.`);
     return true;
 }

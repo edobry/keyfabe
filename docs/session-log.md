@@ -1,4 +1,4 @@
-# Proxmark3 Easy: Keyfob Cloning Session Log
+# Proxmark3 Easy: Tag Cloning Session Log
 
 ## Hardware
 
@@ -103,11 +103,11 @@ pm3 -c "hw tune"
 
 LF antenna should read >15V at 125 kHz. HF antenna should read >10V at 13.56 MHz.
 
-## Cloning an EM410x Keyfob
+## Cloning an EM410x Tag
 
 ### 1. Read the original
 
-Place original keyfob on the LF antenna (large coil side, opposite USB port):
+Place original tag on the LF antenna (large coil side, opposite USB port):
 
 ```sh
 pm3 -c "lf search"
@@ -121,7 +121,7 @@ EM 410x ID 040064DACA
 
 ### 2. Detect the blank
 
-Swap to a blank T55x7 card/fob:
+Swap to a blank T55x7 card/tag:
 
 ```sh
 pm3 -c "lf t55xx detect"

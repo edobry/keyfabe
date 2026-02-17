@@ -2,7 +2,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Fob } from "../../src/lib/store.js";
+import type { Tag } from "../../src/lib/store.js";
 
 let tmpDir: string;
 let storePath: string;
@@ -15,7 +15,7 @@ async function importStore() {
 
 beforeEach(async () => {
     tmpDir = await mkdtemp(join(tmpdir(), "keyfabe-test-"));
-    storePath = join(tmpDir, "fobs.json");
+    storePath = join(tmpDir, "tags.json");
     process.env.KEYFABE_STORE_PATH = storePath;
 });
 
@@ -24,32 +24,32 @@ afterEach(async () => {
     await rm(tmpDir, { recursive: true, force: true });
 });
 
-describe("loadFobs", () => {
+describe("loadTags", () => {
     it("returns [] for missing file", async () => {
-        const { loadFobs } = await importStore();
-        const fobs = await loadFobs();
-        expect(fobs).toEqual([]);
+        const { loadTags } = await importStore();
+        const tags = await loadTags();
+        expect(tags).toEqual([]);
     });
 
     it("returns parsed array from valid JSON", async () => {
-        const data: Fob[] = [{ name: "test", type: "EM410x", id: "1234567890", savedAt: "2024-01-01" }];
+        const data: Tag[] = [{ name: "test", type: "EM410x", id: "1234567890", savedAt: "2024-01-01" }];
         await writeFile(storePath, JSON.stringify(data));
 
-        const { loadFobs } = await importStore();
-        const fobs = await loadFobs();
-        expect(fobs).toEqual(data);
+        const { loadTags } = await importStore();
+        const tags = await loadTags();
+        expect(tags).toEqual(data);
     });
 });
 
-describe("saveFob", () => {
+describe("saveTag", () => {
     it("creates dir and file on first save", async () => {
         await rm(tmpDir, { recursive: true, force: true });
         const subDir = join(tmpDir, "sub");
-        const subPath = join(subDir, "fobs.json");
+        const subPath = join(subDir, "tags.json");
         process.env.KEYFABE_STORE_PATH = subPath;
 
-        const { saveFob } = await importStore();
-        await saveFob({
+        const { saveTag } = await importStore();
+        await saveTag({
             name: "first",
             type: "EM410x",
             id: "AABBCCDDEE",
@@ -61,135 +61,135 @@ describe("saveFob", () => {
         expect(content[0].name).toBe("first");
     });
 
-    it("appends to existing fobs", async () => {
-        const { saveFob } = await importStore();
-        await saveFob({ name: "a", type: "EM410x", id: "1111111111", savedAt: "2024-01-01" });
-        await saveFob({ name: "b", type: "HID Prox", id: "2222222222", savedAt: "2024-01-02" });
+    it("appends to existing tags", async () => {
+        const { saveTag } = await importStore();
+        await saveTag({ name: "a", type: "EM410x", id: "1111111111", savedAt: "2024-01-01" });
+        await saveTag({ name: "b", type: "HID Prox", id: "2222222222", savedAt: "2024-01-02" });
 
-        const { loadFobs } = await importStore();
-        const fobs = await loadFobs();
-        expect(fobs).toHaveLength(2);
-        expect(fobs[0].name).toBe("a");
-        expect(fobs[1].name).toBe("b");
+        const { loadTags } = await importStore();
+        const tags = await loadTags();
+        expect(tags).toHaveLength(2);
+        expect(tags[0].name).toBe("a");
+        expect(tags[1].name).toBe("b");
     });
 
-    it("overwrites fob with same name", async () => {
-        const { saveFob } = await importStore();
-        await saveFob({ name: "dup", type: "EM410x", id: "AAAAAAAAAA", savedAt: "2024-01-01" });
-        await saveFob({ name: "dup", type: "EM410x", id: "BBBBBBBBBB", savedAt: "2024-01-02" });
+    it("overwrites tag with same name", async () => {
+        const { saveTag } = await importStore();
+        await saveTag({ name: "dup", type: "EM410x", id: "AAAAAAAAAA", savedAt: "2024-01-01" });
+        await saveTag({ name: "dup", type: "EM410x", id: "BBBBBBBBBB", savedAt: "2024-01-02" });
 
-        const { loadFobs } = await importStore();
-        const fobs = await loadFobs();
-        expect(fobs).toHaveLength(1);
-        expect(fobs[0].id).toBe("BBBBBBBBBB");
+        const { loadTags } = await importStore();
+        const tags = await loadTags();
+        expect(tags).toHaveLength(1);
+        expect(tags[0].id).toBe("BBBBBBBBBB");
     });
 });
 
-describe("getFob", () => {
-    it("returns matching fob", async () => {
-        const { saveFob, getFob } = await importStore();
-        await saveFob({ name: "target", type: "EM410x", id: "1234567890", savedAt: "2024-01-01" });
+describe("getTag", () => {
+    it("returns matching tag", async () => {
+        const { saveTag, getTag } = await importStore();
+        await saveTag({ name: "target", type: "EM410x", id: "1234567890", savedAt: "2024-01-01" });
 
-        const fob = await getFob("target");
-        expect(fob).toBeDefined();
-        expect(fob!.id).toBe("1234567890");
+        const tag = await getTag("target");
+        expect(tag).toBeDefined();
+        expect(tag!.id).toBe("1234567890");
     });
 
     it("returns undefined for unknown name", async () => {
-        const { getFob } = await importStore();
-        const fob = await getFob("nonexistent");
-        expect(fob).toBeUndefined();
+        const { getTag } = await importStore();
+        const tag = await getTag("nonexistent");
+        expect(tag).toBeUndefined();
     });
 });
 
-describe("renameFob", () => {
-    it("renames existing fob", async () => {
-        const { saveFob, renameFob, getFob } = await importStore();
-        await saveFob({ name: "old-name", type: "EM410x", id: "AABBCCDDEE", savedAt: "2024-01-01" });
+describe("renameTag", () => {
+    it("renames existing tag", async () => {
+        const { saveTag, renameTag, getTag } = await importStore();
+        await saveTag({ name: "old-name", type: "EM410x", id: "AABBCCDDEE", savedAt: "2024-01-01" });
 
-        const result = await renameFob("old-name", "new-name");
+        const result = await renameTag("old-name", "new-name");
         expect(result).toBe("ok");
 
-        const fob = await getFob("new-name");
-        expect(fob).toBeDefined();
-        expect(fob!.id).toBe("AABBCCDDEE");
+        const tag = await getTag("new-name");
+        expect(tag).toBeDefined();
+        expect(tag!.id).toBe("AABBCCDDEE");
 
-        const oldFob = await getFob("old-name");
-        expect(oldFob).toBeUndefined();
+        const oldTag = await getTag("old-name");
+        expect(oldTag).toBeUndefined();
     });
 
     it("returns not-found for unknown name", async () => {
-        const { renameFob } = await importStore();
-        const result = await renameFob("nonexistent", "new-name");
+        const { renameTag } = await importStore();
+        const result = await renameTag("nonexistent", "new-name");
         expect(result).toBe("not-found");
     });
 
     it("returns name-taken when new name exists", async () => {
-        const { saveFob, renameFob } = await importStore();
-        await saveFob({ name: "a", type: "EM410x", id: "1111111111", savedAt: "2024-01-01" });
-        await saveFob({ name: "b", type: "EM410x", id: "2222222222", savedAt: "2024-01-02" });
+        const { saveTag, renameTag } = await importStore();
+        await saveTag({ name: "a", type: "EM410x", id: "1111111111", savedAt: "2024-01-01" });
+        await saveTag({ name: "b", type: "EM410x", id: "2222222222", savedAt: "2024-01-02" });
 
-        const result = await renameFob("a", "b");
+        const result = await renameTag("a", "b");
         expect(result).toBe("name-taken");
     });
 });
 
-describe("importFobs", () => {
-    it("adds new fobs", async () => {
-        const { importFobs, loadFobs } = await importStore();
-        const result = await importFobs([
+describe("importTags", () => {
+    it("adds new tags", async () => {
+        const { importTags, loadTags } = await importStore();
+        const result = await importTags([
             { name: "a", type: "EM410x", id: "1111111111", savedAt: "2024-01-01" },
             { name: "b", type: "HID Prox", id: "2222222222", savedAt: "2024-01-02" },
         ]);
 
         expect(result).toEqual({ added: 2, updated: 0 });
-        const fobs = await loadFobs();
-        expect(fobs).toHaveLength(2);
+        const tags = await loadTags();
+        expect(tags).toHaveLength(2);
     });
 
-    it("updates existing fobs by name", async () => {
-        const { saveFob, importFobs, getFob } = await importStore();
-        await saveFob({ name: "a", type: "EM410x", id: "OLD_ID", savedAt: "2024-01-01" });
+    it("updates existing tags by name", async () => {
+        const { saveTag, importTags, getTag } = await importStore();
+        await saveTag({ name: "a", type: "EM410x", id: "OLD_ID", savedAt: "2024-01-01" });
 
-        const result = await importFobs([{ name: "a", type: "EM410x", id: "NEW_ID", savedAt: "2024-01-02" }]);
+        const result = await importTags([{ name: "a", type: "EM410x", id: "NEW_ID", savedAt: "2024-01-02" }]);
 
         expect(result).toEqual({ added: 0, updated: 1 });
-        const fob = await getFob("a");
-        expect(fob!.id).toBe("NEW_ID");
+        const tag = await getTag("a");
+        expect(tag!.id).toBe("NEW_ID");
     });
 
     it("mixes adds and updates", async () => {
-        const { saveFob, importFobs, loadFobs } = await importStore();
-        await saveFob({ name: "existing", type: "EM410x", id: "OLD", savedAt: "2024-01-01" });
+        const { saveTag, importTags, loadTags } = await importStore();
+        await saveTag({ name: "existing", type: "EM410x", id: "OLD", savedAt: "2024-01-01" });
 
-        const result = await importFobs([
+        const result = await importTags([
             { name: "existing", type: "EM410x", id: "UPDATED", savedAt: "2024-01-02" },
             { name: "new-one", type: "HID Prox", id: "FRESH", savedAt: "2024-01-03" },
         ]);
 
         expect(result).toEqual({ added: 1, updated: 1 });
-        const fobs = await loadFobs();
-        expect(fobs).toHaveLength(2);
+        const tags = await loadTags();
+        expect(tags).toHaveLength(2);
     });
 });
 
-describe("removeFob", () => {
-    it("removes existing fob and returns true", async () => {
-        const { saveFob, removeFob, loadFobs } = await importStore();
-        await saveFob({ name: "to-delete", type: "EM410x", id: "AABBCCDDEE", savedAt: "2024-01-01" });
-        await saveFob({ name: "keep", type: "EM410x", id: "1122334455", savedAt: "2024-01-02" });
+describe("removeTag", () => {
+    it("removes existing tag and returns true", async () => {
+        const { saveTag, removeTag, loadTags } = await importStore();
+        await saveTag({ name: "to-delete", type: "EM410x", id: "AABBCCDDEE", savedAt: "2024-01-01" });
+        await saveTag({ name: "keep", type: "EM410x", id: "1122334455", savedAt: "2024-01-02" });
 
-        const result = await removeFob("to-delete");
+        const result = await removeTag("to-delete");
         expect(result).toBe(true);
 
-        const fobs = await loadFobs();
-        expect(fobs).toHaveLength(1);
-        expect(fobs[0].name).toBe("keep");
+        const tags = await loadTags();
+        expect(tags).toHaveLength(1);
+        expect(tags[0].name).toBe("keep");
     });
 
     it("returns false for unknown name", async () => {
-        const { removeFob } = await importStore();
-        const result = await removeFob("nonexistent");
+        const { removeTag } = await importStore();
+        const result = await removeTag("nonexistent");
         expect(result).toBe(false);
     });
 });

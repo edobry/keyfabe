@@ -27,7 +27,7 @@ export function printNoSavedTags() {
     p.log.warn("No saved tags. Use `keyfabe read` or `keyfabe clone` first.");
 }
 
-export function printFobNotFound(name: string) {
+export function printTagNotFound(name: string) {
     p.log.error(`No saved tag named "${name}". Use \`keyfabe list\` to see saved tags.`);
 }
 

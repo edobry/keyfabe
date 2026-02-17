@@ -4,19 +4,19 @@ import { mockClack, setupBeforeEach } from "../helpers/mocks.js";
 mockClack();
 
 vi.mock("../../src/lib/store.js", () => ({
-    getFob: vi.fn(),
-    loadFobs: vi.fn(),
+    getTag: vi.fn(),
+    loadTags: vi.fn(),
 }));
 
 vi.mock("../../src/lib/prompts.js", () => ({
-    selectFob: vi.fn(),
+    selectTag: vi.fn(),
 }));
 
 import * as p from "@clack/prompts";
 import { show } from "../../src/commands/show.js";
-import { getFob } from "../../src/lib/store.js";
+import { getTag } from "../../src/lib/store.js";
 
-const mockGetFob = vi.mocked(getFob);
+const mockGetTag = vi.mocked(getTag);
 const mockNote = vi.mocked(p.note);
 
 beforeEach(() => {
@@ -24,8 +24,8 @@ beforeEach(() => {
 });
 
 describe("show", () => {
-    it("displays fob details via p.note when found", async () => {
-        mockGetFob.mockResolvedValue({
+    it("displays tag details via p.note when found", async () => {
+        mockGetTag.mockResolvedValue({
             name: "front-door",
             type: "EM410x",
             id: "1A2B3C4D5E",
@@ -42,8 +42,8 @@ describe("show", () => {
         expect(noteContent).toContain("2024-06-15");
     });
 
-    it("displays fob without encoding", async () => {
-        mockGetFob.mockResolvedValue({
+    it("displays tag without encoding", async () => {
+        mockGetTag.mockResolvedValue({
             name: "garage",
             type: "HID Prox",
             id: "2004263F88",
@@ -55,8 +55,8 @@ describe("show", () => {
         expect(noteContent).not.toContain("Encoding");
     });
 
-    it("fob not found → false", async () => {
-        mockGetFob.mockResolvedValue(undefined);
+    it("tag not found → false", async () => {
+        mockGetTag.mockResolvedValue(undefined);
 
         expect(await show("nonexistent")).toBe(false);
         expect(mockNote).not.toHaveBeenCalled();
