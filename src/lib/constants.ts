@@ -25,6 +25,27 @@ export const WriteTarget = {
     HF: "magic card (Gen1A or Gen2/CUID)",
 } as const;
 
+export const DetectionKind = {
+    BLANK_T55X7: "blank_t55x7",
+    BRICKED_HF: "bricked_hf",
+    NONE: "none",
+} as const;
+
+export type DetectionKindName = (typeof DetectionKind)[keyof typeof DetectionKind];
+
+export const DetectionSummary = {
+    blank_t55x7: "Blank T55x7 detected (no cloned data).",
+    bricked_hf: "Card detected but anticollision failed.",
+    none: "No tag detected.",
+} as const;
+
+export const DetectionHint = {
+    blank_t55x7: "This is a blank T55x7 — it has no data yet. Use `keyfabe write` to program an LF identity onto it.",
+    bricked_hf:
+        "An HF card was detected but anticollision failed — it may have a corrupted block 0.\nRun `keyfabe repair` to fix it.",
+    none: "Make sure the tag is flat against the antenna.",
+} as const;
+
 export const WriteHint = {
     not_magic:
         'This is a regular MIFARE Classic card with a factory-locked UID.\nOnly "magic" cards (Gen1A or Gen2/CUID) allow UID changes.',

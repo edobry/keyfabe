@@ -4,7 +4,7 @@ import { mockClack, setupBeforeEach } from "../helpers/mocks.js";
 mockClack();
 
 vi.mock("../../src/lib/card-ops.js", () => ({
-    searchCard: vi.fn(),
+    searchCardWithDiagnosis: vi.fn(),
     writeAndVerify: vi.fn(),
     detectMagicType: vi.fn(),
 }));
@@ -41,19 +41,20 @@ vi.mock("../../src/lib/mf-ops.js", () => ({
 
 vi.mock("../../src/lib/display.js", () => ({
     printCardInfo: vi.fn(),
+    printDetectionHint: vi.fn(),
     printDoctorHint: vi.fn(),
     printFullCardCloneProgress: vi.fn(),
     printNotMagicHint: vi.fn(),
 }));
 
 import { clone } from "../../src/commands/clone.js";
-import { detectMagicType, searchCard, writeAndVerify } from "../../src/lib/card-ops.js";
+import { detectMagicType, searchCardWithDiagnosis, writeAndVerify } from "../../src/lib/card-ops.js";
 import { crackKeys, dumpCard, restoreCard } from "../../src/lib/mf-ops.js";
 import { Pm3Error, pm3Exec, requireDevice } from "../../src/lib/pm3.js";
 import { promptName } from "../../src/lib/prompts.js";
 import { saveFob } from "../../src/lib/store.js";
 
-const mockSearchCard = vi.mocked(searchCard);
+const mockSearchCardWithDiagnosis = vi.mocked(searchCardWithDiagnosis);
 const mockRequireDevice = vi.mocked(requireDevice);
 const mockWriteAndVerify = vi.mocked(writeAndVerify);
 const mockSaveFob = vi.mocked(saveFob);
@@ -72,7 +73,10 @@ beforeEach(() => {
 
 describe("clone", () => {
     it("full happy path: read → write → verify → save", async () => {
-        mockSearchCard.mockResolvedValueOnce({ type: "EM410x", id: "1A2B3C4D5E", encoding: "RF/64" });
+        mockSearchCardWithDiagnosis.mockResolvedValueOnce({
+            card: { type: "EM410x", id: "1A2B3C4D5E", encoding: "RF/64" },
+            diagnosis: "none",
+        });
         mockWriteAndVerify.mockResolvedValue(true);
         mockPromptName.mockResolvedValue("cloned-fob");
         mockSaveFob.mockResolvedValue(undefined);
@@ -91,14 +95,17 @@ describe("clone", () => {
     it("read fails all 3 retries → false", async () => {
         vi.useFakeTimers();
 
-        mockSearchCard.mockResolvedValueOnce(null).mockResolvedValueOnce(null).mockResolvedValueOnce(null);
+        mockSearchCardWithDiagnosis
+            .mockResolvedValueOnce({ card: null, diagnosis: "none" })
+            .mockResolvedValueOnce({ card: null, diagnosis: "none" })
+            .mockResolvedValueOnce({ card: null, diagnosis: "none" });
 
         const clonePromise = clone();
         await vi.advanceTimersByTimeAsync(2000);
         await vi.advanceTimersByTimeAsync(2000);
         await clonePromise;
 
-        expect(mockSearchCard).toHaveBeenCalledTimes(3);
+        expect(mockSearchCardWithDiagnosis).toHaveBeenCalledTimes(3);
         expect(mockWriteAndVerify).not.toHaveBeenCalled();
 
         vi.useRealTimers();
@@ -108,24 +115,30 @@ describe("clone", () => {
         mockRequireDevice.mockResolvedValueOnce(false);
 
         expect(await clone()).toBe(false);
-        expect(mockSearchCard).not.toHaveBeenCalled();
+        expect(mockSearchCardWithDiagnosis).not.toHaveBeenCalled();
     });
 
     it("writeAndVerify fails → false", async () => {
-        mockSearchCard.mockResolvedValueOnce({ type: "EM410x", id: "1A2B3C4D5E", encoding: "RF/64" });
+        mockSearchCardWithDiagnosis.mockResolvedValueOnce({
+            card: { type: "EM410x", id: "1A2B3C4D5E", encoding: "RF/64" },
+            diagnosis: "none",
+        });
         mockWriteAndVerify.mockResolvedValue(false);
 
         expect(await clone()).toBe(false);
     });
 
     it("pm3 not found during read → false", async () => {
-        mockSearchCard.mockRejectedValueOnce(new MockPm3Error("pm3 command not found", "", ""));
+        mockSearchCardWithDiagnosis.mockRejectedValueOnce(new MockPm3Error("pm3 command not found", "", ""));
 
         expect(await clone()).toBe(false);
     });
 
     it("LF cards still use UID-only path (regression)", async () => {
-        mockSearchCard.mockResolvedValueOnce({ type: "EM410x", id: "1A2B3C4D5E" });
+        mockSearchCardWithDiagnosis.mockResolvedValueOnce({
+            card: { type: "EM410x", id: "1A2B3C4D5E" },
+            diagnosis: "none",
+        });
         mockWriteAndVerify.mockResolvedValue(true);
         mockPromptName.mockResolvedValue("lf-fob");
         mockSaveFob.mockResolvedValue(undefined);
@@ -138,7 +151,10 @@ describe("clone", () => {
 
 describe("clone MIFARE Classic full-card", () => {
     it("MIFARE Classic 1K → full-card flow (crack → dump → restore → verify → save)", async () => {
-        mockSearchCard.mockResolvedValueOnce({ type: "MIFARE Classic 1K", id: "DEADBEEF" });
+        mockSearchCardWithDiagnosis.mockResolvedValueOnce({
+            card: { type: "MIFARE Classic 1K", id: "DEADBEEF" },
+            diagnosis: "none",
+        });
         mockCrackKeys.mockResolvedValueOnce({
             success: true,
             keyFile: "hf-mf-DEADBEEF-key.bin",
@@ -178,7 +194,10 @@ describe("clone MIFARE Classic full-card", () => {
     });
 
     it("MIFARE Classic 1K with FM11RF08S fallback", async () => {
-        mockSearchCard.mockResolvedValueOnce({ type: "MIFARE Classic 1K", id: "AABBCCDD" });
+        mockSearchCardWithDiagnosis.mockResolvedValueOnce({
+            card: { type: "MIFARE Classic 1K", id: "AABBCCDD" },
+            diagnosis: "none",
+        });
         mockCrackKeys.mockResolvedValueOnce({
             success: true,
             keyFile: "hf-mf-AABBCCDD-key.bin",
@@ -203,7 +222,10 @@ describe("clone MIFARE Classic full-card", () => {
     });
 
     it("key cracking fails → false", async () => {
-        mockSearchCard.mockResolvedValueOnce({ type: "MIFARE Classic 1K", id: "DEADBEEF" });
+        mockSearchCardWithDiagnosis.mockResolvedValueOnce({
+            card: { type: "MIFARE Classic 1K", id: "DEADBEEF" },
+            diagnosis: "none",
+        });
         mockCrackKeys.mockResolvedValueOnce(null);
 
         expect(await clone()).toBe(false);
@@ -211,7 +233,10 @@ describe("clone MIFARE Classic full-card", () => {
     });
 
     it("dump fails → false", async () => {
-        mockSearchCard.mockResolvedValueOnce({ type: "MIFARE Classic 1K", id: "DEADBEEF" });
+        mockSearchCardWithDiagnosis.mockResolvedValueOnce({
+            card: { type: "MIFARE Classic 1K", id: "DEADBEEF" },
+            diagnosis: "none",
+        });
         mockCrackKeys.mockResolvedValueOnce({
             success: true,
             keyFile: "key.bin",
@@ -224,7 +249,10 @@ describe("clone MIFARE Classic full-card", () => {
     });
 
     it("target not magic card → false", async () => {
-        mockSearchCard.mockResolvedValueOnce({ type: "MIFARE Classic 1K", id: "DEADBEEF" });
+        mockSearchCardWithDiagnosis.mockResolvedValueOnce({
+            card: { type: "MIFARE Classic 1K", id: "DEADBEEF" },
+            diagnosis: "none",
+        });
         mockCrackKeys.mockResolvedValueOnce({
             success: true,
             keyFile: "key.bin",
@@ -242,7 +270,10 @@ describe("clone MIFARE Classic full-card", () => {
     });
 
     it("restore fails → false", async () => {
-        mockSearchCard.mockResolvedValueOnce({ type: "MIFARE Classic 1K", id: "DEADBEEF" });
+        mockSearchCardWithDiagnosis.mockResolvedValueOnce({
+            card: { type: "MIFARE Classic 1K", id: "DEADBEEF" },
+            diagnosis: "none",
+        });
         mockCrackKeys.mockResolvedValueOnce({
             success: true,
             keyFile: "key.bin",

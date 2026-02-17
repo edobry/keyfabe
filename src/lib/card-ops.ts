@@ -1,9 +1,19 @@
 import * as p from "@clack/prompts";
 import { buildBlock0 } from "./block0.js";
-import { CardType, cardFrequency, MagicCardType, Pm3Cmd, type Pm3Command, WriteTarget } from "./constants.js";
-import { printDoctorHint } from "./display.js";
+import {
+    CardType,
+    cardFrequency,
+    DetectionKind,
+    type DetectionKindName,
+    MagicCardType,
+    Pm3Cmd,
+    type Pm3Command,
+    WriteTarget,
+} from "./constants.js";
+import { printDoctorHint, printFrequencyMismatchHint, printNotMagicHint } from "./display.js";
 import {
     type CardInfo,
+    detectBrickedHf,
     parseCloneResult,
     parseHfSearch,
     parseLfSearch,
@@ -19,6 +29,43 @@ export async function searchCard(): Promise<CardInfo | null> {
 
     const { stdout: hfOut } = await pm3Exec(Pm3Cmd.HF_SEARCH);
     return parseHfSearch(hfOut);
+}
+
+export interface SearchDiagnosis {
+    card: CardInfo | null;
+    diagnosis: DetectionKindName;
+}
+
+export async function searchCardWithDiagnosis(): Promise<SearchDiagnosis> {
+    // 1. Normal LF search
+    const { stdout: lfOut } = await pm3Exec(Pm3Cmd.LF_SEARCH);
+    const lfCard = parseLfSearch(lfOut);
+    if (lfCard) return { card: lfCard, diagnosis: DetectionKind.NONE };
+
+    // 2. Normal HF search
+    const { stdout: hfOut } = await pm3Exec(Pm3Cmd.HF_SEARCH);
+    const hfCard = parseHfSearch(hfOut);
+    if (hfCard) return { card: hfCard, diagnosis: DetectionKind.NONE };
+
+    // 3. Neither found — run fallback probes
+
+    // 3a. Check hfOutput for bricked indicators
+    if (detectBrickedHf(hfOut)) {
+        return { card: null, diagnosis: DetectionKind.BRICKED_HF };
+    }
+
+    // 3b. Check for blank T55x7
+    try {
+        const { stdout: t55Out } = await pm3Exec(Pm3Cmd.LF_T55XX_DETECT);
+        const t55 = parseT55xxDetect(t55Out);
+        if (t55) {
+            return { card: null, diagnosis: DetectionKind.BLANK_T55X7 };
+        }
+    } catch {
+        // Graceful fallback — treat as nothing found
+    }
+
+    return { card: null, diagnosis: DetectionKind.NONE };
 }
 
 /** Detect magic card type by running hf search and parsing capabilities. */
@@ -95,6 +142,15 @@ export async function writeAndVerify(card: CardInfo): Promise<boolean> {
             const t55 = parseT55xxDetect(stdout);
             if (!t55) {
                 stopWithError(detectSpinner, `Card is not a writable T55x7. Use a ${WriteTarget.LF}.`);
+                // Check if an HF card is on the antenna instead
+                try {
+                    const { stdout: hfOut } = await pm3Exec(Pm3Cmd.HF_SEARCH);
+                    if (parseHfSearch(hfOut)) {
+                        printFrequencyMismatchHint("LF");
+                    }
+                } catch {
+                    // ignore — just a hint
+                }
                 return false;
             }
             detectSpinner.stop(`Writable card detected (${t55.chipType})`);
@@ -128,6 +184,7 @@ export async function writeAndVerify(card: CardInfo): Promise<boolean> {
             }
             if (magicType === MagicCardType.UNKNOWN) {
                 stopWithError(magicSpinner, `Target is not a recognized magic card. Use a ${WriteTarget.HF}.`);
+                printNotMagicHint();
                 return false;
             }
             magicSpinner.stop(`Magic card detected (${magicType})`);

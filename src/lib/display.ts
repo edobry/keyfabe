@@ -1,5 +1,5 @@
 import * as p from "@clack/prompts";
-import { WriteHint } from "./constants.js";
+import { DetectionHint, type DetectionKindName, WriteHint } from "./constants.js";
 import type { CardInfo } from "./parsers.js";
 
 export const LF_VOLTAGE_THRESHOLD = 15;
@@ -29,6 +29,10 @@ export function printNoSavedTags() {
 
 export function printFobNotFound(name: string) {
     p.log.error(`No saved tag named "${name}". Use \`keyfabe list\` to see saved tags.`);
+}
+
+export function printDetectionHint(diagnosis: DetectionKindName) {
+    p.log.warn(DetectionHint[diagnosis]);
 }
 
 export function printNotMagicHint() {

@@ -1,11 +1,12 @@
 import * as p from "@clack/prompts";
-import { searchCard } from "../lib/card-ops.js";
-import { printCardInfo, printDoctorHint } from "../lib/display.js";
+import { searchCardWithDiagnosis } from "../lib/card-ops.js";
+import { DetectionSummary } from "../lib/constants.js";
+import { printCardInfo, printDetectionHint, printDoctorHint } from "../lib/display.js";
 import { Pm3Error, requireDevice } from "../lib/pm3.js";
 import { promptName } from "../lib/prompts.js";
 import { saveFob } from "../lib/store.js";
 
-export async function read(): Promise<boolean> {
+export async function read(options?: { saveAs?: string }): Promise<boolean> {
     if (!(await requireDevice())) return false;
 
     p.intro("Read Tag");
@@ -13,17 +14,18 @@ export async function read(): Promise<boolean> {
     const s = p.spinner();
     s.start("Searching for tag...");
     try {
-        const card = await searchCard();
+        const { card, diagnosis } = await searchCardWithDiagnosis();
         if (!card) {
-            s.stop("No tag detected. Make sure the tag is flat against the antenna.");
-            p.log.error("No tag detected. Make sure the tag is flat against the antenna.");
+            s.stop(DetectionSummary[diagnosis]);
+            p.log.error(DetectionSummary[diagnosis]);
+            printDetectionHint(diagnosis);
             return false;
         }
         s.stop("Tag detected");
         printCardInfo(card);
 
         // Prompt to save
-        const name = await promptName();
+        const name = options?.saveAs ?? (await promptName());
         if (name) {
             await saveFob({
                 name,

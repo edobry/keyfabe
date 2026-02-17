@@ -1,7 +1,13 @@
 import * as p from "@clack/prompts";
-import { detectMagicType, searchCard, writeAndVerify } from "../lib/card-ops.js";
-import { CardType, cardFrequency, MagicCardType, Pm3Cmd, WriteTarget } from "../lib/constants.js";
-import { printCardInfo, printDoctorHint, printFullCardCloneProgress, printNotMagicHint } from "../lib/display.js";
+import { detectMagicType, searchCardWithDiagnosis, writeAndVerify } from "../lib/card-ops.js";
+import { CardType, cardFrequency, DetectionSummary, MagicCardType, Pm3Cmd, WriteTarget } from "../lib/constants.js";
+import {
+    printCardInfo,
+    printDetectionHint,
+    printDoctorHint,
+    printFullCardCloneProgress,
+    printNotMagicHint,
+} from "../lib/display.js";
 import { crackKeys, dumpCard, restoreCard } from "../lib/mf-ops.js";
 import type { CardInfo } from "../lib/parsers.js";
 import { parseHfSearch } from "../lib/parsers.js";
@@ -26,13 +32,15 @@ export async function clone(options?: { saveAs?: string }): Promise<boolean> {
         const s = p.spinner();
         s.start(`Reading original (attempt ${attempt}/${MAX_READ_RETRIES})...`);
         try {
-            card = await searchCard();
-            if (card) {
+            const result = await searchCardWithDiagnosis();
+            if (result.card) {
+                card = result.card;
                 s.stop("Original tag read");
                 break;
             }
-            s.stop("No tag detected.");
-            p.log.error("No tag detected.");
+            s.stop(DetectionSummary[result.diagnosis]);
+            p.log.error(DetectionSummary[result.diagnosis]);
+            printDetectionHint(result.diagnosis);
         } catch (err) {
             if (err instanceof Pm3Error) {
                 s.stop(err.message);

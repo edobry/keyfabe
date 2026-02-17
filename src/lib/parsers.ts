@@ -111,6 +111,11 @@ export function parseHfSearch(output: string): CardInfo | null {
     return { type, id: uid };
 }
 
+/** Check if hf search output shows a card present but with broken anticollision. */
+export function detectBrickedHf(output: string): boolean {
+    return /anticollision|can'?t select/i.test(output);
+}
+
 export function parseMagicType(output: string): MagicCardTypeName {
     if (/Gen\s*1\s*a|magic\s*backdoor/i.test(output)) return MagicCardType.GEN1A;
     if (/Gen\s*2|CUID/i.test(output)) return MagicCardType.GEN2_CUID;
