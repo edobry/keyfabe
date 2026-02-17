@@ -1,3 +1,11 @@
+# [0.9.0](https://github.com/edobry/keyfabe/compare/v0.8.0...v0.9.0) (2026-02-17)
+
+
+### Features
+
+* add diagnostic card detection with actionable error messages ([70277af](https://github.com/edobry/keyfabe/commit/70277af05b60b5bfd429ac5d94a12de5a55d74e5))
+* add non-interactive mode for scripting and piped usage ([304b316](https://github.com/edobry/keyfabe/commit/304b316fece4d59d4e83fa9075504fd6f9b01ecc))
+
 # [0.8.0](https://github.com/edobry/keyfabe/compare/v0.7.1...v0.8.0) (2026-02-15)
 
 
