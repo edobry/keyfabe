@@ -151,7 +151,7 @@ Reads whatever tag is on the antenna and compares its ID against a saved identit
 
 ### `keyfabe list`
 
-Lists all saved tag identities from `~/.keyfabe/tags.json`.
+Lists all saved tag identities from `~/.keyfabe/tags.json`. Use `--json` for machine-readable output.
 
 ### `keyfabe show [name]`
 
