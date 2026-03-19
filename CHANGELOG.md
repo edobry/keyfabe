@@ -1,3 +1,15 @@
+# [1.0.0](https://github.com/edobry/keyfabe/compare/v0.9.0...v1.0.0) (2026-03-19)
+
+
+* feat!: 1.0 release polish — add missing test coverage and fix docs ([24fd9d6](https://github.com/edobry/keyfabe/commit/24fd9d6a998b9b324eb88302fd8505b1291790d1))
+
+
+### BREAKING CHANGES
+
+* First stable release — public API is now committed.
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+
 # [0.9.0](https://github.com/edobry/keyfabe/compare/v0.8.0...v0.9.0) (2026-02-17)
 
 
