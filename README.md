@@ -83,6 +83,9 @@ keyfabe import tags.json
 
 # repair a bricked magic card (bad BCC/anticollision)
 keyfabe repair
+
+# decode the data on a saved MIFARE Classic dump (e.g. laundry card balance)
+keyfabe inspect [name]
 ```
 
 Commands that take `[name]` arguments are fully optional — when omitted, you'll get an interactive tag picker.
@@ -177,6 +180,16 @@ Imports tag identities from a JSON file. New names are added, existing names are
 
 Repairs a bricked magic card that has a corrupted block 0 (bad BCC, broken anticollision). Automates the recovery process: bypasses the broken anticollision, reads the current block 0, computes and writes the correct BCC, then verifies after power-cycle. See [Magic Card Reference](docs/magic-cards.md) for details.
 
+### `keyfabe inspect [name]`
+
+Decodes the contents of a saved MIFARE Classic dump. Useful for inspecting cards that store value on-chip (laundry, vending, transit). Output includes:
+
+- **Value blocks** — every block matching the MIFARE Classic value-block layout (4-byte little-endian value with bitwise-complement integrity check), decoded as a raw integer and as USD-cents (e.g. `1150 (= $11.50 if cents)`).
+- **Printable strings** — ASCII runs ≥4 chars (e.g. `UINHOUSELAU` for Mitech in-house laundry systems).
+- **Block dump** — all 64 (1K) or 256 (4K) blocks in hex, grouped by sector, with consecutive zero data blocks collapsed.
+
+The dump file is located by UID — checked first at `tag.dumpFile` (set when `keyfabe clone` does a full-card clone), then `~/hf-mf-<UID>-dump.bin` (pm3's default save path), then the current directory. If no dump exists, run `keyfabe clone` to create one (cracking keys + dumping all blocks; up to ~28 min on FM11RF08S chips).
+
 ## Supported Card Types
 
 For detailed information on magic card types, block 0 format, and recovery procedures, see the [Magic Card Reference](docs/magic-cards.md).
@@ -222,11 +235,13 @@ src/
     export.ts           # export identities as JSON
     import.ts           # import identities from JSON
     repair.ts           # repair bricked magic cards
+    inspect.ts          # decode saved MIFARE Classic dump (value blocks, ASCII)
   lib/
     pm3.ts              # spawns pm3 process, sends commands
     firmware.ts         # build/flash subprocess helpers
     parsers.ts          # parse pm3 output (card type, ID, voltages)
     block0.ts           # MIFARE Classic block 0 utilities (BCC, builder)
+    mf-data.ts          # MIFARE Classic dump parsing (sector layout, value blocks, ASCII)
     store.ts            # read/write ~/.keyfabe/tags.json
     constants.ts        # shared card type and pm3 command constants
     card-ops.ts         # search, write-and-verify logic shared by commands

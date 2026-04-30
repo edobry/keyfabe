@@ -7,6 +7,7 @@ import { deleteTag } from "./commands/delete.js";
 import { doctor } from "./commands/doctor.js";
 import { exportTags } from "./commands/export.js";
 import { importFile } from "./commands/import.js";
+import { inspect } from "./commands/inspect.js";
 import { list } from "./commands/list.js";
 import { read } from "./commands/read.js";
 import { rename } from "./commands/rename.js";
@@ -44,6 +45,7 @@ program.action(
                 { value: "read", label: "Read a tag", hint: "identify and save" },
                 { value: "write", label: "Write a saved identity", hint: "write to blank tag" },
                 { value: "verify", label: "Verify a tag", hint: "compare to saved identity" },
+                { value: "inspect", label: "Inspect tag data", hint: "decode value blocks (e.g. laundry balance)" },
                 { value: "list", label: "List saved tags" },
                 { value: "doctor", label: "Health check", hint: "diagnose device" },
                 { value: "setup", label: "Firmware setup", hint: "flash Iceman firmware" },
@@ -64,6 +66,8 @@ program.action(
                 return write();
             case "verify":
                 return verify();
+            case "inspect":
+                return inspect();
             case "list":
                 return list();
             case "doctor":
@@ -144,5 +148,11 @@ program
     .command("repair")
     .description("Repair a bricked magic card with corrupted block 0 (bad BCC)")
     .action(withExitCode(repair));
+
+program
+    .command("inspect")
+    .description("Decode the data on a saved MIFARE Classic tag's dump (value blocks, ASCII strings, hex)")
+    .argument("[name]", "name of the saved tag identity")
+    .action(withExitCode(inspect));
 
 program.parse();
