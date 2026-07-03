@@ -33,6 +33,7 @@ vi.mock("../../src/lib/display.js", () => ({
     printNotMagicHint: vi.fn(),
 }));
 
+import * as p from "@clack/prompts";
 import { write } from "../../src/commands/write.js";
 import { detectMagicType, writeAndVerify } from "../../src/lib/card-ops.js";
 import { restoreCard } from "../../src/lib/mf-ops.js";
@@ -45,6 +46,7 @@ const mockRequireDevice = vi.mocked(requireDevice);
 const mockRestoreCard = vi.mocked(restoreCard);
 const mockDetectMagicType = vi.mocked(detectMagicType);
 const mockPm3Exec = vi.mocked(pm3Exec);
+const mockLogWarn = vi.mocked(p.log.warn);
 
 beforeEach(() => {
     setupBeforeEach();
@@ -97,7 +99,7 @@ describe("write", () => {
         expect(await write("front-door")).toBe(false);
     });
 
-    it("tag without dumpFile → existing UID-only path (regression)", async () => {
+    it("tag without dumpFile → existing UID-only path (regression) + warns it carries no data", async () => {
         mockGetTag.mockResolvedValue({
             name: "mifare-uid",
             type: "MIFARE Classic 1K",
@@ -109,6 +111,7 @@ describe("write", () => {
         expect(await write("mifare-uid")).toBe(true);
         expect(mockWriteAndVerify).toHaveBeenCalled();
         expect(mockRestoreCard).not.toHaveBeenCalled();
+        expect(mockLogWarn).toHaveBeenCalledWith(expect.stringContaining("only the UID will be written"));
     });
 });
 

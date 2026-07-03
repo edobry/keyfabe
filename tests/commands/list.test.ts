@@ -3,7 +3,8 @@ import { getOutput, mockClack, setupBeforeEach } from "../helpers/mocks.js";
 
 mockClack();
 
-vi.mock("../../src/lib/store.js", () => ({
+vi.mock("../../src/lib/store.js", async () => ({
+    ...(await vi.importActual("../../src/lib/store.js")),
     loadTags: vi.fn(),
 }));
 
@@ -84,5 +85,33 @@ describe("list", () => {
         expect(await list()).toBe(true);
         const noteContent = mockNote.mock.calls[0][0] as string;
         expect(noteContent).not.toContain("Encoding");
+    });
+
+    it("shows Data column with fidelity for MIFARE Classic tags", async () => {
+        mockLoadTags.mockResolvedValue([
+            {
+                name: "494 laundry",
+                type: "MIFARE Classic 1K",
+                id: "815498C5",
+                dumpFile: "/d.bin",
+                savedAt: "2026-02-14T00:00:00.000Z",
+            },
+            { name: "laundry 2", type: "MIFARE Classic 1K", id: "815498C5", savedAt: "2026-04-30T00:00:00.000Z" },
+        ]);
+
+        expect(await list()).toBe(true);
+        const noteContent = mockNote.mock.calls[0][0] as string;
+        expect(noteContent).toContain("Data");
+        expect(noteContent).toContain("full");
+        expect(noteContent).toContain("uid-only");
+    });
+
+    it("omits Data column when no MIFARE Classic tags present", async () => {
+        mockLoadTags.mockResolvedValue([
+            { name: "front-door", type: "EM410x", id: "1A2B3C4D5E", savedAt: "2024-06-15T12:00:00.000Z" },
+        ]);
+
+        expect(await list()).toBe(true);
+        expect(mockNote.mock.calls[0][0] as string).not.toContain("Data");
     });
 });

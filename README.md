@@ -160,7 +160,7 @@ Reads whatever tag is on the antenna and matches it against **all** saved identi
 
 ### `keyfabe list`
 
-Lists all saved tag identities from `~/.keyfabe/tags.json`. Use `--json` for machine-readable output.
+Lists all saved tag identities from `~/.keyfabe/tags.json`. Use `--json` for machine-readable output. For MIFARE Classic identities a **Data** column shows `full` (a dump is on file, so `write` restores all data) or `uid-only` (only the UID would be written — no balance/data).
 
 ### `keyfabe show [name]`
 

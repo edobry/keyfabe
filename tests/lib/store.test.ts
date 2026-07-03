@@ -193,3 +193,22 @@ describe("removeTag", () => {
         expect(result).toBe(false);
     });
 });
+
+describe("tagFidelity", () => {
+    it("MIFARE Classic with a saved dump → full", async () => {
+        const { tagFidelity } = await importStore();
+        expect(tagFidelity({ name: "x", type: "MIFARE Classic 1K", id: "AA", dumpFile: "/d.bin", savedAt: "x" })).toBe(
+            "full",
+        );
+    });
+
+    it("MIFARE Classic without a dump → uid-only", async () => {
+        const { tagFidelity } = await importStore();
+        expect(tagFidelity({ name: "x", type: "MIFARE Classic 4K", id: "AA", savedAt: "x" })).toBe("uid-only");
+    });
+
+    it("LF/simple card → n/a (UID is the whole identity)", async () => {
+        const { tagFidelity } = await importStore();
+        expect(tagFidelity({ name: "x", type: "EM410x", id: "AA", savedAt: "x" })).toBe("n/a");
+    });
+});

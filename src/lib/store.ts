@@ -1,6 +1,7 @@
 import { access, rename as fsRename, mkdir, readFile, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
+import { CardType } from "./constants.js";
 
 const STORE_DIR = process.env.KEYFABE_STORE_PATH
     ? dirname(process.env.KEYFABE_STORE_PATH)
@@ -15,6 +16,19 @@ export interface Tag {
     encoding?: string;
     dumpFile?: string;
     savedAt: string;
+}
+
+export type TagFidelity = "full" | "uid-only" | "n/a";
+
+/**
+ * How completely a saved identity can be reproduced.
+ *   - "full"     : MIFARE Classic with a saved dump — write restores all data.
+ *   - "uid-only" : MIFARE Classic without a dump — write copies only the UID.
+ *   - "n/a"      : LF/simple cards where the UID *is* the whole identity.
+ */
+export function tagFidelity(tag: Tag): TagFidelity {
+    if (tag.type !== CardType.MIFARE_CLASSIC_1K && tag.type !== CardType.MIFARE_CLASSIC_4K) return "n/a";
+    return tag.dumpFile ? "full" : "uid-only";
 }
 
 async function migrateStore(): Promise<void> {
