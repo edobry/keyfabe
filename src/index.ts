@@ -15,6 +15,7 @@ import { rename } from "./commands/rename.js";
 import { repair } from "./commands/repair.js";
 import { setup } from "./commands/setup.js";
 import { show } from "./commands/show.js";
+import { type ValueOptions, value } from "./commands/value.js";
 import { verify } from "./commands/verify.js";
 import { write } from "./commands/write.js";
 
@@ -164,5 +165,17 @@ program
     .description("Decode the data on a saved MIFARE Classic tag's dump (value blocks, ASCII strings, hex)")
     .argument("[name]", "name of the saved tag identity")
     .action(withExitCode(inspect));
+
+program
+    .command("value")
+    .description("Read or set a MIFARE Classic value block (e.g. a stored-value balance) on the card")
+    .argument("[name]", "saved MIFARE identity to source the sector key from")
+    .option("--block <n>", "block number of the value block")
+    .option("--get", "read the current value (default when no --set/--inc/--dec given)")
+    .option("--set <value>", "set the value block to this integer")
+    .option("--inc <value>", "increment the value block by this integer")
+    .option("--dec <value>", "decrement the value block by this integer")
+    .option("--key <hex>", "sector key (6 hex bytes) — overrides the saved dump's key")
+    .action(withExitCode((name: string | undefined, opts: ValueOptions) => value(name, opts)));
 
 program.parse();

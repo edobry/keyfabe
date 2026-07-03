@@ -196,9 +196,19 @@ Decodes the contents of a saved MIFARE Classic dump. Useful for inspecting cards
 
 The dump file is located by UID — checked first at `tag.dumpFile` (set when `keyfabe clone` does a full-card clone), then `~/hf-mf-<UID>-dump.bin` (pm3's default save path), then the current directory. If no dump exists, run `keyfabe clone` to create one (cracking keys + dumping all blocks; up to ~28 min on FM11RF08S chips).
 
+### `keyfabe value [name]`
+
+Reads or sets a MIFARE Classic **value block** (e.g. a stored-value balance) on the card on the antenna. The sector key is taken from the named identity's saved dump, or from an explicit `--key <hex>`.
+
+- `--block <n>` — which block to operate on (required).
+- `--get` — read the current value (the default when no write flag is given).
+- `--set <v>` / `--inc <v>` / `--dec <v>` — set, increment, or decrement the value (integers; cents for laundry systems).
+
+Writes prompt for confirmation and read back the block to confirm. This is for **your own card** — systems with server reconciliation, a transaction MAC, or a monotonic counter may reject or revert a directly-written balance. See the [Stored-Value Card Reference](docs/stored-value-cards.md).
+
 ## Supported Card Types
 
-For detailed information on magic card types, block 0 format, and recovery procedures, see the [Magic Card Reference](docs/magic-cards.md).
+For detailed information on magic card types, block 0 format, and recovery procedures, see the [Magic Card Reference](docs/magic-cards.md). For how balance-on-card systems work and the full-vs-UID-only clone distinction, see the [Stored-Value Card Reference](docs/stored-value-cards.md).
 
 | Type | Frequency | Read | Clone | Notes |
 |------|-----------|------|-------|-------|
@@ -243,6 +253,7 @@ src/
     import.ts           # import identities from JSON
     repair.ts           # repair bricked magic cards
     inspect.ts          # decode saved MIFARE Classic dump (value blocks, ASCII)
+    value.ts            # read/set a MIFARE Classic value block (balance)
   lib/
     pm3.ts              # spawns pm3 process, sends commands
     firmware.ts         # build/flash subprocess helpers

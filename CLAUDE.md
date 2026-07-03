@@ -91,6 +91,7 @@ This project interacts with real RFID hardware. Protocol-level knowledge (card t
 - **Document learnings in `docs/`** whenever working with hardware protocols reveals non-obvious behavior — byte order issues, card type quirks, recovery procedures, etc.
 - Reference docs exist:
   - `docs/magic-cards.md` — magic card types, block 0 format, BCC calculation, ATQA byte order, recovery procedures
+  - `docs/stored-value-cards.md` — how balance-on-card systems work, value-block format, full-vs-UID-only clone distinction, why hollow clones format-error, limits of directly writing a balance
 - When adding support for new card types or write methods, update the relevant doc alongside the code.
 - If a hardware interaction fails in an unexpected way, document the root cause and fix in the appropriate doc before moving on.
 

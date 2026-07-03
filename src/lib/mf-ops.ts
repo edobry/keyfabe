@@ -54,6 +54,24 @@ export async function dumpCard(_uid: string, cardType: string, keyFile: string):
     return null;
 }
 
+/** Read a single block with a key and decode it as a value block (null if unreadable or not a value block). */
+export async function readValueBlock(block: number, key: string): Promise<number | null> {
+    const cmd = Pm3Cmd.HF_MF_RDBL.arg("--blk", String(block)).arg("-k", key);
+    const { stdout } = await pm3Exec(cmd);
+    const { bytes } = parseReadBlock(stdout);
+    return bytes ? decodeValueBlockBytes(Buffer.from(bytes, "hex")) : null;
+}
+
+export type ValueOp = "set" | "inc" | "dec";
+
+/** Set / increment / decrement a MIFARE value block via `hf mf value`. Returns false on a reported failure. */
+export async function writeValueBlock(block: number, key: string, op: ValueOp, amount: number): Promise<boolean> {
+    const flag = op === "set" ? "--set" : op === "inc" ? "--inc" : "--dec";
+    const cmd = Pm3Cmd.HF_MF_VALUE.arg("--blk", String(block)).arg("-k", key).arg(flag, String(amount));
+    const { stdout } = await pm3Exec(cmd);
+    return !/\[-\]|failed|can'?t select|error(?!rate)/i.test(stdout);
+}
+
 export interface LiveValueRead {
     blockIndex: number;
     sector: number;

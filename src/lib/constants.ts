@@ -120,6 +120,7 @@ export const Pm3Cmd = {
     HF_MF_CSETUID: mf.sub("csetuid"),
     HF_MF_WRBL: mf.sub("wrbl"),
     HF_MF_RDBL: mf.sub("rdbl"),
+    HF_MF_VALUE: mf.sub("value"),
     HF_MF_AUTOPWN: mf.sub("autopwn"),
     HF_MF_DUMP: mf.sub("dump"),
     HF_MF_RESTORE: mf.sub("restore"),
