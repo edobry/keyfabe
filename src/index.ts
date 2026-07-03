@@ -6,13 +6,16 @@ import { clone } from "./commands/clone.js";
 import { deleteTag } from "./commands/delete.js";
 import { doctor } from "./commands/doctor.js";
 import { exportTags } from "./commands/export.js";
+import { identify } from "./commands/identify.js";
 import { importFile } from "./commands/import.js";
+import { inspect } from "./commands/inspect.js";
 import { list } from "./commands/list.js";
 import { read } from "./commands/read.js";
 import { rename } from "./commands/rename.js";
 import { repair } from "./commands/repair.js";
 import { setup } from "./commands/setup.js";
 import { show } from "./commands/show.js";
+import { type ValueOptions, value } from "./commands/value.js";
 import { verify } from "./commands/verify.js";
 import { write } from "./commands/write.js";
 
@@ -44,6 +47,8 @@ program.action(
                 { value: "read", label: "Read a tag", hint: "identify and save" },
                 { value: "write", label: "Write a saved identity", hint: "write to blank tag" },
                 { value: "verify", label: "Verify a tag", hint: "compare to saved identity" },
+                { value: "identify", label: "Identify a tag", hint: "read + match against all saved" },
+                { value: "inspect", label: "Inspect tag data", hint: "decode value blocks (e.g. laundry balance)" },
                 { value: "list", label: "List saved tags" },
                 { value: "doctor", label: "Health check", hint: "diagnose device" },
                 { value: "setup", label: "Firmware setup", hint: "flash Iceman firmware" },
@@ -64,6 +69,10 @@ program.action(
                 return write();
             case "verify":
                 return verify();
+            case "identify":
+                return identify();
+            case "inspect":
+                return inspect();
             case "list":
                 return list();
             case "doctor":
@@ -138,11 +147,35 @@ program
     .command("verify")
     .description("Read a tag and compare it against a saved identity")
     .argument("[name]", "name of the saved tag identity")
-    .action(withExitCode(verify));
+    .option("--deep", "for MIFARE Classic, also compare on-card value blocks (not just the UID)")
+    .action(withExitCode((name: string | undefined, opts: { deep?: boolean }) => verify(name, opts)));
+
+program
+    .command("identify")
+    .description("Read a tag and match it against all saved identities (flags UID-only clones)")
+    .action(withExitCode(identify));
 
 program
     .command("repair")
     .description("Repair a bricked magic card with corrupted block 0 (bad BCC)")
     .action(withExitCode(repair));
+
+program
+    .command("inspect")
+    .description("Decode the data on a saved MIFARE Classic tag's dump (value blocks, ASCII strings, hex)")
+    .argument("[name]", "name of the saved tag identity")
+    .action(withExitCode(inspect));
+
+program
+    .command("value")
+    .description("Read or set a MIFARE Classic value block (e.g. a stored-value balance) on the card")
+    .argument("[name]", "saved MIFARE identity to source the sector key from")
+    .option("--block <n>", "block number of the value block")
+    .option("--get", "read the current value (default when no --set/--inc/--dec given)")
+    .option("--set <value>", "set the value block to this integer")
+    .option("--inc <value>", "increment the value block by this integer")
+    .option("--dec <value>", "decrement the value block by this integer")
+    .option("--key <hex>", "sector key (6 hex bytes) — overrides the saved dump's key")
+    .action(withExitCode((name: string | undefined, opts: ValueOptions) => value(name, opts)));
 
 program.parse();

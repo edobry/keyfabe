@@ -83,6 +83,9 @@ keyfabe import tags.json
 
 # repair a bricked magic card (bad BCC/anticollision)
 keyfabe repair
+
+# decode the data on a saved MIFARE Classic dump (e.g. laundry card balance)
+keyfabe inspect [name]
 ```
 
 Commands that take `[name]` arguments are fully optional — when omitted, you'll get an interactive tag picker.
@@ -149,9 +152,15 @@ Writes a previously-saved identity to a blank tag. Without a name, presents an i
 
 Reads whatever tag is on the antenna and compares its ID against a saved identity. Reports match, partial match (ID matches but type differs), or mismatch. Without a name, presents an interactive picker.
 
+Pass `--deep` to go beyond the UID for MIFARE Classic identities that have a saved full-card dump: it reads the live card's value blocks with the saved keys, reports the current on-card balances, and **fails** if the card carries no data under those keys (a UID-only clone that would otherwise pass on UID alone).
+
+### `keyfabe identify`
+
+Reads whatever tag is on the antenna and matches it against **all** saved identities at once — no name needed. Reports which saved tags share the UID (and whether a full dump is on file for them). For MIFARE Classic cards it also probes data fidelity, distinguishing a working full clone (custom sector keys) from a **UID-only clone** (factory-default keys, empty data) that would pass `verify` on UID alone but be rejected as unformatted by a stored-value reader.
+
 ### `keyfabe list`
 
-Lists all saved tag identities from `~/.keyfabe/tags.json`. Use `--json` for machine-readable output.
+Lists all saved tag identities from `~/.keyfabe/tags.json`. Use `--json` for machine-readable output. For MIFARE Classic identities a **Data** column shows `full` (a dump is on file, so `write` restores all data) or `uid-only` (only the UID would be written — no balance/data).
 
 ### `keyfabe show [name]`
 
@@ -177,9 +186,29 @@ Imports tag identities from a JSON file. New names are added, existing names are
 
 Repairs a bricked magic card that has a corrupted block 0 (bad BCC, broken anticollision). Automates the recovery process: bypasses the broken anticollision, reads the current block 0, computes and writes the correct BCC, then verifies after power-cycle. See [Magic Card Reference](docs/magic-cards.md) for details.
 
+### `keyfabe inspect [name]`
+
+Decodes the contents of a saved MIFARE Classic dump. Useful for inspecting cards that store value on-chip (laundry, vending, transit). Output includes:
+
+- **Value blocks** — every block matching the MIFARE Classic value-block layout (4-byte little-endian value with bitwise-complement integrity check), decoded as a raw integer and as USD-cents (e.g. `1150 (= $11.50 if cents)`).
+- **Printable strings** — ASCII runs ≥4 chars (e.g. `UINHOUSELAU` for Mitech in-house laundry systems).
+- **Block dump** — all 64 (1K) or 256 (4K) blocks in hex, grouped by sector, with consecutive zero data blocks collapsed.
+
+The dump file is located by UID — checked first at `tag.dumpFile` (set when `keyfabe clone` does a full-card clone), then `~/hf-mf-<UID>-dump.bin` (pm3's default save path), then the current directory. If no dump exists, run `keyfabe clone` to create one (cracking keys + dumping all blocks; up to ~28 min on FM11RF08S chips).
+
+### `keyfabe value [name]`
+
+Reads or sets a MIFARE Classic **value block** (e.g. a stored-value balance) on the card on the antenna. The sector key is taken from the named identity's saved dump, or from an explicit `--key <hex>`.
+
+- `--block <n>` — which block to operate on (required).
+- `--get` — read the current value (the default when no write flag is given).
+- `--set <v>` / `--inc <v>` / `--dec <v>` — set, increment, or decrement the value (integers; cents for laundry systems).
+
+Writes prompt for confirmation and read back the block to confirm. This is for **your own card** — systems with server reconciliation, a transaction MAC, or a monotonic counter may reject or revert a directly-written balance. See the [Stored-Value Card Reference](docs/stored-value-cards.md).
+
 ## Supported Card Types
 
-For detailed information on magic card types, block 0 format, and recovery procedures, see the [Magic Card Reference](docs/magic-cards.md).
+For detailed information on magic card types, block 0 format, and recovery procedures, see the [Magic Card Reference](docs/magic-cards.md). For how balance-on-card systems work and the full-vs-UID-only clone distinction, see the [Stored-Value Card Reference](docs/stored-value-cards.md).
 
 | Type | Frequency | Read | Clone | Notes |
 |------|-----------|------|-------|-------|
@@ -215,6 +244,7 @@ src/
     clone.ts            # guided clone flow
     write.ts            # write saved identity
     verify.ts           # verify tag against saved identity
+    identify.ts         # match tag against all saved identities + data fidelity
     list.ts             # list saved identities
     show.ts             # show saved identity details
     rename.ts           # rename saved identity
@@ -222,11 +252,14 @@ src/
     export.ts           # export identities as JSON
     import.ts           # import identities from JSON
     repair.ts           # repair bricked magic cards
+    inspect.ts          # decode saved MIFARE Classic dump (value blocks, ASCII)
+    value.ts            # read/set a MIFARE Classic value block (balance)
   lib/
     pm3.ts              # spawns pm3 process, sends commands
     firmware.ts         # build/flash subprocess helpers
     parsers.ts          # parse pm3 output (card type, ID, voltages)
     block0.ts           # MIFARE Classic block 0 utilities (BCC, builder)
+    mf-data.ts          # MIFARE Classic dump parsing (sector layout, value blocks, ASCII)
     store.ts            # read/write ~/.keyfabe/tags.json
     constants.ts        # shared card type and pm3 command constants
     card-ops.ts         # search, write-and-verify logic shared by commands

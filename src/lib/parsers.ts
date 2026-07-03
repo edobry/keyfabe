@@ -130,6 +130,18 @@ export function parseBlock0Data(output: string): string | null {
     return match[1].replace(/\s+/g, "").toUpperCase();
 }
 
+export interface ReadBlockResult {
+    authError: boolean;
+    bytes: string | null;
+}
+
+/** Parse `hf mf rdbl` output: extract the 16 data bytes, or flag an authentication failure. */
+export function parseReadBlock(output: string): ReadBlockResult {
+    const authError = /auth\s*error|can'?t\s*read|cannot\s*read|read\s*block\s*failed|error=/i.test(output);
+    const bytes = parseBlock0Data(output);
+    return { authError, bytes };
+}
+
 export function parseCloneResult(output: string): CloneResult {
     const hasError = /error/i.test(output) && !/errorrate/i.test(output);
     const hasDone =

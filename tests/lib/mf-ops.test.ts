@@ -3,13 +3,111 @@ import { mockPm3Module, setupBeforeEach } from "../helpers/mocks.js";
 
 mockPm3Module();
 
-import { crackKeys, dumpCard, restoreCard } from "../../src/lib/mf-ops.js";
+import { MF_1K_SIZE, parseMfDump } from "../../src/lib/mf-data.js";
+import {
+    crackKeys,
+    dumpCard,
+    readLiveValueBlocks,
+    readValueBlock,
+    restoreCard,
+    writeValueBlock,
+} from "../../src/lib/mf-ops.js";
 import { pm3Exec } from "../../src/lib/pm3.js";
 
 const mockPm3Exec = vi.mocked(pm3Exec);
 
 beforeEach(() => {
     setupBeforeEach();
+});
+
+/** A 1K dump with one value block (2000) at block 16 and Key A EC195D46D55D on sector 4's trailer. */
+function buildDumpWithValueBlock() {
+    const buf = Buffer.alloc(MF_1K_SIZE);
+    const v = 16 * 16;
+    buf.writeInt32LE(2000, v);
+    buf.writeInt32LE(~2000 | 0, v + 4);
+    buf.writeInt32LE(2000, v + 8);
+    buf.writeUInt8(0, v + 12);
+    buf.writeUInt8(0xff, v + 13);
+    buf.writeUInt8(0, v + 14);
+    buf.writeUInt8(0xff, v + 15);
+    const t = 19 * 16;
+    [0xec, 0x19, 0x5d, 0x46, 0xd5, 0x5d].forEach((b, i) => {
+        buf.writeUInt8(b, t + i);
+    });
+    return parseMfDump(buf);
+}
+
+describe("readValueBlock", () => {
+    it("decodes a value block read with the given key", async () => {
+        mockPm3Exec.mockResolvedValueOnce({
+            stdout: "[=]  16 | E1 00 00 00 1E FF FF FF E1 00 00 00 00 FF 00 FF | ................",
+            stderr: "",
+        });
+        expect(await readValueBlock(16, "EC195D46D55D")).toBe(225);
+    });
+
+    it("returns null on an auth error", async () => {
+        mockPm3Exec.mockResolvedValueOnce({ stdout: "[#] Auth error", stderr: "" });
+        expect(await readValueBlock(16, "FFFFFFFFFFFF")).toBeNull();
+    });
+
+    it("returns null when the block is not a value block", async () => {
+        mockPm3Exec.mockResolvedValueOnce({
+            stdout: "[=]  16 | 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F 10 | ................",
+            stderr: "",
+        });
+        expect(await readValueBlock(16, "FFFFFFFFFFFF")).toBeNull();
+    });
+});
+
+describe("writeValueBlock", () => {
+    it("issues --set and reports success", async () => {
+        mockPm3Exec.mockResolvedValueOnce({ stdout: "[+] value updated", stderr: "" });
+        expect(await writeValueBlock(16, "EC195D46D55D", "set", 1000)).toBe(true);
+        expect(mockPm3Exec.mock.calls[0][0].toString()).toContain("--set 1000");
+    });
+
+    it("maps inc and dec to the right flags", async () => {
+        mockPm3Exec.mockResolvedValue({ stdout: "ok", stderr: "" });
+        await writeValueBlock(16, "AABBCCDDEEFF", "inc", 5);
+        expect(mockPm3Exec.mock.calls[0][0].toString()).toContain("--inc 5");
+        await writeValueBlock(16, "AABBCCDDEEFF", "dec", 7);
+        expect(mockPm3Exec.mock.calls[1][0].toString()).toContain("--dec 7");
+    });
+
+    it("returns false on a failure marker", async () => {
+        mockPm3Exec.mockResolvedValueOnce({ stdout: "[-] failed to update value block", stderr: "" });
+        expect(await writeValueBlock(16, "AABBCCDDEEFF", "set", 1)).toBe(false);
+    });
+});
+
+describe("readLiveValueBlocks", () => {
+    it("reads the live value block with the saved sector key", async () => {
+        mockPm3Exec.mockResolvedValueOnce({
+            stdout: "[=]  16 | E1 00 00 00 1E FF FF FF E1 00 00 00 00 FF 00 FF | ................",
+            stderr: "",
+        });
+
+        const res = await readLiveValueBlocks(buildDumpWithValueBlock());
+        expect(res).toEqual([{ blockIndex: 16, sector: 4, savedValue: 2000, liveValue: 225, authError: false }]);
+        expect(mockPm3Exec.mock.calls[0][0].toString()).toContain("EC195D46D55D");
+    });
+
+    it("flags an auth error when the live card rejects the saved key (UID-only clone)", async () => {
+        mockPm3Exec.mockResolvedValueOnce({ stdout: "[#] Auth error", stderr: "" });
+
+        const res = await readLiveValueBlocks(buildDumpWithValueBlock());
+        expect(res).toEqual([{ blockIndex: 16, sector: 4, savedValue: 2000, liveValue: null, authError: true }]);
+    });
+
+    it("treats a thrown pm3 error as an unreadable block", async () => {
+        mockPm3Exec.mockRejectedValueOnce(new Error("boom"));
+
+        const res = await readLiveValueBlocks(buildDumpWithValueBlock());
+        expect(res[0].authError).toBe(true);
+        expect(res[0].liveValue).toBeNull();
+    });
 });
 
 describe("crackKeys", () => {

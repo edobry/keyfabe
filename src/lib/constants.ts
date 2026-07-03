@@ -20,6 +20,9 @@ export function cardFrequency(type: string): "LF" | "HF" {
     }
 }
 
+/** MIFARE Classic factory-default key — the Key A/B on virgin cards and UID-only clones. */
+export const DEFAULT_MIFARE_KEY = "FFFFFFFFFFFF";
+
 export const WriteTarget = {
     LF: "blank T55x7 tag",
     HF: "magic card (Gen1A or Gen2/CUID)",
@@ -117,6 +120,7 @@ export const Pm3Cmd = {
     HF_MF_CSETUID: mf.sub("csetuid"),
     HF_MF_WRBL: mf.sub("wrbl"),
     HF_MF_RDBL: mf.sub("rdbl"),
+    HF_MF_VALUE: mf.sub("value"),
     HF_MF_AUTOPWN: mf.sub("autopwn"),
     HF_MF_DUMP: mf.sub("dump"),
     HF_MF_RESTORE: mf.sub("restore"),

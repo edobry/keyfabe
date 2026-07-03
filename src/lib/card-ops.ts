@@ -3,6 +3,7 @@ import { buildBlock0 } from "./block0.js";
 import {
     CardType,
     cardFrequency,
+    DEFAULT_MIFARE_KEY,
     DetectionKind,
     type DetectionKindName,
     MagicCardType,
@@ -18,6 +19,7 @@ import {
     parseHfSearch,
     parseLfSearch,
     parseMagicType,
+    parseReadBlock,
     parseT55xxDetect,
 } from "./parsers.js";
 import { Pm3Error, pm3Exec } from "./pm3.js";
@@ -66,6 +68,30 @@ export async function searchCardWithDiagnosis(): Promise<SearchDiagnosis> {
     }
 
     return { card: null, diagnosis: DetectionKind.NONE };
+}
+
+export type MifareDataFidelity = "custom-keys" | "blank-default" | "data-default" | "unknown";
+
+/**
+ * Probe whether a MIFARE Classic card actually carries data, by reading a data
+ * block with the factory-default key:
+ *   - default key rejected -> "custom-keys"  (real data behind operator keys)
+ *   - reads all-zero        -> "blank-default" (UID-only clone / unwritten card)
+ *   - reads non-zero        -> "data-default"  (data present under default keys)
+ *
+ * Distinguishes a working full clone from a UID-only clone that shares its UID.
+ */
+export async function probeMifareDataFidelity(): Promise<MifareDataFidelity> {
+    try {
+        const cmd = Pm3Cmd.HF_MF_RDBL.arg("--blk", "1").arg("-k", DEFAULT_MIFARE_KEY);
+        const { stdout } = await pm3Exec(cmd);
+        const { authError, bytes } = parseReadBlock(stdout);
+        if (bytes) return /^0+$/.test(bytes) ? "blank-default" : "data-default";
+        if (authError) return "custom-keys";
+        return "unknown";
+    } catch {
+        return "unknown";
+    }
 }
 
 /** Detect magic card type by running hf search and parsing capabilities. */

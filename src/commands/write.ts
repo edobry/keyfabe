@@ -36,6 +36,13 @@ export async function write(name?: string): Promise<boolean> {
         return writeFullCard(tag);
     }
 
+    if ((tag.type === CardType.MIFARE_CLASSIC_1K || tag.type === CardType.MIFARE_CLASSIC_4K) && !tag.dumpFile) {
+        p.log.warn("No saved data dump for this identity — only the UID will be written.");
+        p.log.warn(
+            "A stored-value card (laundry, transit) needs its data too; re-clone with `keyfabe clone` for a full dump.",
+        );
+    }
+
     const freq = cardFrequency(tag.type);
     await waitForEnter(`Place a ${WriteTarget[freq]} on the antenna.`);
 
