@@ -1,3 +1,14 @@
+# [1.1.0](https://github.com/edobry/keyfabe/compare/v1.0.0...v1.1.0) (2026-07-03)
+
+
+### Features
+
+* add `identify` command to match a tag against all saved identities ([70368a7](https://github.com/edobry/keyfabe/commit/70368a7adced18ff7687ead90a130524cb15897b))
+* add `inspect` command to decode saved MIFARE Classic dumps ([884c8c5](https://github.com/edobry/keyfabe/commit/884c8c596285d293687c53239c7ff978a8c0ab68))
+* add `value` command and stored-value card docs ([87cb51b](https://github.com/edobry/keyfabe/commit/87cb51ba9bc8b6f0b8848b9549dcd865f25e0411))
+* add `verify --deep` to compare on-card value blocks, not just UID ([a91a984](https://github.com/edobry/keyfabe/commit/a91a984bfab11f3d63dd7ba970de4b030c3e1085))
+* surface full-vs-UID-only clone fidelity in the store ([43d2d59](https://github.com/edobry/keyfabe/commit/43d2d59ae8542566d137ab812b619e53495d11f4))
+
 # [1.0.0](https://github.com/edobry/keyfabe/compare/v0.9.0...v1.0.0) (2026-03-19)
 
 
