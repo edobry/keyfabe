@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
+    decodeValueBlockBytes,
     findAsciiStrings,
     findValueBlocks,
     isSectorTrailer,
@@ -13,6 +14,7 @@ import {
     MF_4K_SIZE,
     parseMfDump,
     parseValueBlock,
+    sectorKeyA,
     sectorOf,
 } from "../../src/lib/mf-data.js";
 
@@ -42,6 +44,36 @@ function build1KDump(overrides: Record<number, Buffer> = {}): Buffer {
     }
     return buf;
 }
+
+describe("sectorKeyA", () => {
+    it("returns Key A from a sector's trailer block", () => {
+        // Sector 4's trailer is block 19; Key A is the first 6 bytes.
+        const trailer = makeBlock(0xec, 0x19, 0x5d, 0x46, 0xd5, 0x5d, 0xff, 0x07, 0x80, 0x69, 0, 0, 0, 0, 0, 0);
+        const dump = parseMfDump(build1KDump({ 19: trailer }));
+        expect(sectorKeyA(dump, 4)).toBe("EC195D46D55D");
+    });
+
+    it("returns null for a sector with no trailer in the dump", () => {
+        const dump = parseMfDump(build1KDump());
+        // sector 99 does not exist in a 1K dump
+        expect(sectorKeyA(dump, 99)).toBeNull();
+    });
+});
+
+describe("decodeValueBlockBytes", () => {
+    it("decodes a valid value block", () => {
+        expect(decodeValueBlockBytes(makeValueBlock(225))).toBe(225);
+        expect(decodeValueBlockBytes(makeValueBlock(2000))).toBe(2000);
+    });
+
+    it("returns null for a non-value block", () => {
+        expect(decodeValueBlockBytes(makeBlock(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16))).toBeNull();
+    });
+
+    it("returns null for wrong-length input", () => {
+        expect(decodeValueBlockBytes(Buffer.alloc(8))).toBeNull();
+    });
+});
 
 describe("sectorOf / isSectorTrailer", () => {
     it("maps 1K blocks to 16 sectors of 4 blocks", () => {

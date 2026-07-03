@@ -146,7 +146,8 @@ program
     .command("verify")
     .description("Read a tag and compare it against a saved identity")
     .argument("[name]", "name of the saved tag identity")
-    .action(withExitCode(verify));
+    .option("--deep", "for MIFARE Classic, also compare on-card value blocks (not just the UID)")
+    .action(withExitCode((name: string | undefined, opts: { deep?: boolean }) => verify(name, opts)));
 
 program
     .command("identify")

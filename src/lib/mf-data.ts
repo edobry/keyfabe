@@ -87,6 +87,22 @@ export function parseValueBlock(block: MfBlock): ValueBlock | null {
     return { blockIndex: block.index, sector: block.sector, value: v1, addr: a1 };
 }
 
+/** Key A (first 6 bytes) of a sector's trailer, as uppercase hex — for authenticating to that sector. */
+export function sectorKeyA(dump: MfDump, sector: number): string | null {
+    const trailer = dump.blocks.find((b) => b.sector === sector && b.isTrailer);
+    if (!trailer) return null;
+    return Array.from(trailer.bytes.subarray(0, 6))
+        .map((b) => b.toString(16).padStart(2, "0").toUpperCase())
+        .join("");
+}
+
+/** Decode a raw 16-byte block as a MIFARE value block, or null if it fails the integrity invariants. */
+export function decodeValueBlockBytes(bytes: Buffer): number | null {
+    if (bytes.length !== MF_BLOCK_SIZE) return null;
+    const vb = parseValueBlock({ index: 0, sector: 0, isTrailer: false, bytes });
+    return vb ? vb.value : null;
+}
+
 export function findValueBlocks(dump: MfDump): ValueBlock[] {
     const out: ValueBlock[] = [];
     for (const block of dump.blocks) {
