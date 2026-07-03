@@ -4,7 +4,12 @@ import { mockClack, mockPm3Module, setupBeforeEach } from "../helpers/mocks.js";
 mockPm3Module();
 mockClack();
 
-import { searchCard, searchCardWithDiagnosis, writeAndVerify } from "../../src/lib/card-ops.js";
+import {
+    probeMifareDataFidelity,
+    searchCard,
+    searchCardWithDiagnosis,
+    writeAndVerify,
+} from "../../src/lib/card-ops.js";
 import { Pm3Error, pm3Exec } from "../../src/lib/pm3.js";
 
 const mockPm3Exec = vi.mocked(pm3Exec);
@@ -262,5 +267,38 @@ describe("writeAndVerify", () => {
         mockPm3Exec.mockResolvedValueOnce({ stdout: "[+] Valid ISO 14443-A tag found", stderr: "" });
 
         expect(await writeAndVerify(mifareCard)).toBe(false);
+    });
+});
+
+describe("probeMifareDataFidelity", () => {
+    it("default key rejected → custom-keys (real data behind operator keys)", async () => {
+        mockPm3Exec.mockResolvedValueOnce({ stdout: "[#] Auth error\n[!!] Can't read block. error=-1", stderr: "" });
+        expect(await probeMifareDataFidelity()).toBe("custom-keys");
+    });
+
+    it("reads all-zero data → blank-default (UID-only clone / unwritten)", async () => {
+        mockPm3Exec.mockResolvedValueOnce({
+            stdout: "[=]   1 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | ................",
+            stderr: "",
+        });
+        expect(await probeMifareDataFidelity()).toBe("blank-default");
+    });
+
+    it("reads non-zero data → data-default", async () => {
+        mockPm3Exec.mockResolvedValueOnce({
+            stdout: "[=]   1 | 55 49 4E 48 4F 55 53 45 4C 41 55 00 00 00 06 08 | UINHOUSELAU.....",
+            stderr: "",
+        });
+        expect(await probeMifareDataFidelity()).toBe("data-default");
+    });
+
+    it("read failure with no bytes and no auth error → unknown", async () => {
+        mockPm3Exec.mockResolvedValueOnce({ stdout: "[=] nothing here", stderr: "" });
+        expect(await probeMifareDataFidelity()).toBe("unknown");
+    });
+
+    it("pm3 throws → unknown (never propagates)", async () => {
+        mockPm3Exec.mockRejectedValueOnce(new MockPm3Error("pm3 command not found", "", ""));
+        expect(await probeMifareDataFidelity()).toBe("unknown");
     });
 });

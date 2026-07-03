@@ -11,6 +11,7 @@ import {
     parseHwTune,
     parseLfSearch,
     parseMagicType,
+    parseReadBlock,
     parseRestore,
     parseT55xxDetect,
 } from "../../src/lib/parsers.js";
@@ -419,5 +420,28 @@ describe("parseFm11rf08sRecovery", () => {
         const result = parseFm11rf08sRecovery(output);
         expect(result.success).toBe(false);
         expect(result.keyFile).toBeNull();
+    });
+});
+
+describe("parseReadBlock", () => {
+    it("extracts the 16 data bytes from a successful read", () => {
+        const output = "[=]   1 | 55 49 4E 48 4F 55 53 45 4C 41 55 00 00 00 06 08 | UINHOUSELAU.....";
+        const result = parseReadBlock(output);
+        expect(result.authError).toBe(false);
+        expect(result.bytes).toBe("55494E484F5553454C41550000000608");
+    });
+
+    it("returns all-zero bytes for a blank block", () => {
+        const output = "[=]  16 | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 | ................";
+        const result = parseReadBlock(output);
+        expect(result.authError).toBe(false);
+        expect(result.bytes).toBe("00000000000000000000000000000000");
+    });
+
+    it("flags an authentication failure with no bytes", () => {
+        const output = "[#] Auth error\n[!!] Can't read block. error=-1";
+        const result = parseReadBlock(output);
+        expect(result.authError).toBe(true);
+        expect(result.bytes).toBeNull();
     });
 });

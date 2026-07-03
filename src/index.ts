@@ -6,6 +6,7 @@ import { clone } from "./commands/clone.js";
 import { deleteTag } from "./commands/delete.js";
 import { doctor } from "./commands/doctor.js";
 import { exportTags } from "./commands/export.js";
+import { identify } from "./commands/identify.js";
 import { importFile } from "./commands/import.js";
 import { inspect } from "./commands/inspect.js";
 import { list } from "./commands/list.js";
@@ -45,6 +46,7 @@ program.action(
                 { value: "read", label: "Read a tag", hint: "identify and save" },
                 { value: "write", label: "Write a saved identity", hint: "write to blank tag" },
                 { value: "verify", label: "Verify a tag", hint: "compare to saved identity" },
+                { value: "identify", label: "Identify a tag", hint: "read + match against all saved" },
                 { value: "inspect", label: "Inspect tag data", hint: "decode value blocks (e.g. laundry balance)" },
                 { value: "list", label: "List saved tags" },
                 { value: "doctor", label: "Health check", hint: "diagnose device" },
@@ -66,6 +68,8 @@ program.action(
                 return write();
             case "verify":
                 return verify();
+            case "identify":
+                return identify();
             case "inspect":
                 return inspect();
             case "list":
@@ -143,6 +147,11 @@ program
     .description("Read a tag and compare it against a saved identity")
     .argument("[name]", "name of the saved tag identity")
     .action(withExitCode(verify));
+
+program
+    .command("identify")
+    .description("Read a tag and match it against all saved identities (flags UID-only clones)")
+    .action(withExitCode(identify));
 
 program
     .command("repair")

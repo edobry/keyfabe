@@ -152,6 +152,10 @@ Writes a previously-saved identity to a blank tag. Without a name, presents an i
 
 Reads whatever tag is on the antenna and compares its ID against a saved identity. Reports match, partial match (ID matches but type differs), or mismatch. Without a name, presents an interactive picker.
 
+### `keyfabe identify`
+
+Reads whatever tag is on the antenna and matches it against **all** saved identities at once — no name needed. Reports which saved tags share the UID (and whether a full dump is on file for them). For MIFARE Classic cards it also probes data fidelity, distinguishing a working full clone (custom sector keys) from a **UID-only clone** (factory-default keys, empty data) that would pass `verify` on UID alone but be rejected as unformatted by a stored-value reader.
+
 ### `keyfabe list`
 
 Lists all saved tag identities from `~/.keyfabe/tags.json`. Use `--json` for machine-readable output.
@@ -228,6 +232,7 @@ src/
     clone.ts            # guided clone flow
     write.ts            # write saved identity
     verify.ts           # verify tag against saved identity
+    identify.ts         # match tag against all saved identities + data fidelity
     list.ts             # list saved identities
     show.ts             # show saved identity details
     rename.ts           # rename saved identity
